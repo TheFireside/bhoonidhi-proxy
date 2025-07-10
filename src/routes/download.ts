@@ -20,7 +20,7 @@ router.get('/', (req, res) => {
     }
     // Return a mock download link
     return res.status(200).json({
-      download_url: `https://mock-download.com/${collection}/${id}`
+      download_url: `https://mock-download.com/${collection}/${id}`,
     });
   } catch (err) {
     return res.status(500).json({ error: 'Internal Server Error' });

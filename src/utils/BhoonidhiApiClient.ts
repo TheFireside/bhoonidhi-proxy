@@ -7,21 +7,22 @@ export class BhoonidhiApiClient {
     this.axiosInstance = axios.create({
       baseURL,
       headers: {
-        'Accept': 'application/json, text/javascript, */*; q=0.01',
+        Accept: 'application/json, text/javascript, */*; q=0.01',
         'Accept-Language': 'en-IN,en-GB;q=0.9,en-US;q=0.8,en;q=0.7,hi;q=0.6,mr;q=0.5',
-        'Connection': 'keep-alive',
+        Connection: 'keep-alive',
         'Content-Type': 'application/json',
-        'DNT': '1',
+        DNT: '1',
         'Sec-Fetch-Dest': 'empty',
         'Sec-Fetch-Mode': 'cors',
         'Sec-Fetch-Site': 'same-origin',
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
+        'User-Agent':
+          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
         'X-Requested-With': 'XMLHttpRequest',
         'sec-ch-ua': '"Not)A;Brand";v="8", "Chromium";v="138", "Google Chrome";v="138"',
         'sec-ch-ua-mobile': '?0',
         'sec-ch-ua-platform': '"macOS"',
-        'token': ''
-      }
+        token: '',
+      },
     });
   }
 
@@ -33,7 +34,12 @@ export class BhoonidhiApiClient {
       cookie,
       isForm = false,
       extraHeaders = {},
-    }: { token?: string; cookie?: string; isForm?: boolean; extraHeaders?: Record<string, string> } = {}
+    }: {
+      token?: string;
+      cookie?: string;
+      isForm?: boolean;
+      extraHeaders?: Record<string, string>;
+    } = {},
   ) {
     const headers: Record<string, string> = {
       ...(isForm ? { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' } : {}),
@@ -48,7 +54,12 @@ export class BhoonidhiApiClient {
     return response.data;
   }
 
-  async getAccessToken(args: { userId: string; password: string; oldDB?: string; action?: string }) {
+  async getAccessToken(args: {
+    userId: string;
+    password: string;
+    oldDB?: string;
+    action?: string;
+  }) {
     return this.post('/bhoonidhi/LoginServlet', {
       userId: args.userId,
       password: args.password,
@@ -95,7 +106,7 @@ export class BhoonidhiApiClient {
         product_types: args.product_types ?? 'NA',
         themes: args.themes ?? 'NA',
       },
-      { token: args.token, cookie: args.cookie, isForm: true }
+      { token: args.token, cookie: args.cookie, isForm: true },
     );
   }
 
@@ -111,8 +122,22 @@ export class BhoonidhiApiClient {
     return this.post('/bhoonidhi/LocLibServlet', { action: 'GETSHPNAMES' }, { token, cookie });
   }
 
-  async readShapeName({ token, cookie, shpName, shpCat }: { token: string; cookie?: string; shpName: string; shpCat: string }) {
-    return this.post('/bhoonidhi/ReadShape', { action: 'VALIDATESHP', shpName, shpCat }, { token, cookie });
+  async readShapeName({
+    token,
+    cookie,
+    shpName,
+    shpCat,
+  }: {
+    token: string;
+    cookie?: string;
+    shpName: string;
+    shpCat: string;
+  }) {
+    return this.post(
+      '/bhoonidhi/ReadShape',
+      { action: 'VALIDATESHP', shpName, shpCat },
+      { token, cookie },
+    );
   }
 
   async searchProducts(body: Record<string, any>, token: string, cookie?: string) {
@@ -127,11 +152,21 @@ export class BhoonidhiApiClient {
     return this.post('/bhoonidhi/CartServlet', body, { token, cookie });
   }
 
-  async getAllCollectionNames({ userId, userEmail, token, cookie }: { userId: string; userEmail: string; token: string; cookie?: string }) {
+  async getAllCollectionNames({
+    userId,
+    userEmail,
+    token,
+    cookie,
+  }: {
+    userId: string;
+    userEmail: string;
+    token: string;
+    cookie?: string;
+  }) {
     return this.post(
       '/bhoonidhi/SatSenServlet',
       { userId, action: 'GETAVCONFIG', userEmail },
-      { token, cookie, isForm: true }
+      { token, cookie, isForm: true },
     );
   }
 

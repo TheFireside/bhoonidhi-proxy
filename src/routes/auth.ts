@@ -1,5 +1,9 @@
 import { Router } from 'express';
-import { generateAccessToken, generateRefreshToken, validateRefreshToken } from '../utils/tokenManager';
+import {
+  generateAccessToken,
+  generateRefreshToken,
+  validateRefreshToken,
+} from '../utils/tokenManager';
 
 const router = Router();
 
@@ -21,7 +25,7 @@ router.post('/token', (req, res) => {
       return res.status(200).json({
         access_token: accessToken,
         refresh_token: refreshToken,
-        expires_in: 3600
+        expires_in: 3600,
       });
     } else if (grant_type === 'refresh_token') {
       if (!refresh_token || !refreshTokens.has(refresh_token)) {
@@ -36,7 +40,7 @@ router.post('/token', (req, res) => {
       return res.status(200).json({
         access_token: accessToken,
         refresh_token,
-        expires_in: 3600
+        expires_in: 3600,
       });
     } else {
       return res.status(400).json({ error: 'Invalid grant_type' });
