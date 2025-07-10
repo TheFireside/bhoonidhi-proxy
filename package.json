@@ -1,0 +1,30 @@
+{
+  "name": "bhoonidhi-proxy",
+  "version": "1.0.0",
+  "description": "This project provides a drop-in replacement for the Bhoonidhi Satellite Data API. It is useful when the original Bhoonidhi service is down, but your application depends on its REST API format.",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon --watch src --exec ts-node src/lambdaHandler.ts",
+    "build": "tsc",
+    "start": "node dist/lambdaHandler.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^2.2.0",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "serverless-http": "^3.2.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^24.0.13",
+    "nodemon": "^3.1.10",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  }
+}
