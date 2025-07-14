@@ -7,7 +7,6 @@ const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || '';
 const bhoonidhiTokens = new Map<string, string>();
 
 export function generateAccessToken(userId: string): string {
-  console.log(process.env.JWT_SECRET)
   return jwt.sign({ userId }, ACCESS_SECRET, { expiresIn: '1h' });
 }
 
