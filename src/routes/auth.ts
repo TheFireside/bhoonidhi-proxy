@@ -6,7 +6,7 @@ import {
   validateAccessToken,
   storeBhoonidhiToken,
   removeBhoonidhiToken,
-  getTokenExpiryMs
+  getTokenExpiryMs,
 } from '../utils/tokenManager';
 import { BhoonidhiApiClient } from '../utils/BhoonidhiApiClient';
 
@@ -28,7 +28,7 @@ router.post('/token', async (req, res) => {
       try {
         const loginResponse = await bhoonidhiClient.getAccessToken({
           userId,
-          password
+          password,
         });
 
         if (
@@ -51,7 +51,7 @@ router.post('/token', async (req, res) => {
           return res.status(200).json({
             access_token: accessToken,
             refresh_token: refreshToken,
-            expires_in: tokenExpiry
+            expires_in: tokenExpiry,
           });
         } else {
           return res.status(401).json({ error: 'Invalid credentials' });
@@ -90,15 +90,15 @@ router.post('/logout', async (req, res) => {
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({ error: 'Missing or invalid Authorization header' });
     }
-    
+
     const token = authHeader.replace('Bearer ', '');
     const bhoonidhiToken = req.headers['x-bhoonidhi-token'] as string;
-    
+
     // Remove from our refresh tokens
     if (refreshTokens.has(token)) {
       refreshTokens.delete(token);
     }
-    
+
     // Logout from Bhoonidhi API if token is provided
     if (bhoonidhiToken) {
       try {
@@ -108,13 +108,13 @@ router.post('/logout', async (req, res) => {
         // Don't fail the request if Bhoonidhi logout fails
       }
     }
-    
+
     // Remove Bhoonidhi token from storage
     const userId = validateAccessToken(token);
     if (userId) {
       removeBhoonidhiToken(userId);
     }
-    
+
     return res.status(200).json({ message: 'Logged out successfully' });
   } catch (err) {
     console.error('Logout error:', err);
