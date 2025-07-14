@@ -1,20 +1,26 @@
-import { Router } from 'express';
+import { Router, Request } from 'express';
 import { BhoonidhiApiClient } from '../utils/BhoonidhiApiClient';
 
 const router = Router();
 
+interface BhoonidhiRequest extends Request {
+  userId?: string;
+  bhoonidhiToken?: string;
+  userEmail?: string;
+}
+
 // Create Bhoonidhi API client instance
 const bhoonidhiClient = new BhoonidhiApiClient();
 
-router.get('/', async (req, res) => {
+router.get('/', async (req: BhoonidhiRequest, res) => {
   try {
     const { id, collection } = req.query;
-    const bhoonidhiToken = (req as any).bhoonidhiToken;
-    
+    const bhoonidhiToken = req.bhoonidhiToken;
+
     if (!bhoonidhiToken) {
       return res.status(401).json({ error: 'Bhoonidhi token not found' });
     }
-    
+
     if (!id || !collection) {
       return res.status(400).json({ error: 'Missing id or collection parameter' });
     }
@@ -30,9 +36,11 @@ router.get('/', async (req, res) => {
 
     try {
       const downloadResponse = await bhoonidhiClient.searchProducts(downloadBody, bhoonidhiToken);
-      
+
       return res.status(200).json({
-        download_url: downloadResponse.downloadUrl || `https://bhoonidhi.nrsc.gov.in/download/${collection}/${id}`,
+        download_url:
+          downloadResponse.downloadUrl ||
+          `https://bhoonidhi.nrsc.gov.in/download/${collection}/${id}`,
         download_info: downloadResponse,
       });
     } catch (downloadError) {
