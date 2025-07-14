@@ -80,4 +80,10 @@ npm start
 
 ---
 
+## Known Issues
+
+- Only the `/auth/token` endpoint (with userId/password) is currently operational.
+- Refresh token flow and all other API endpoints are not implemented yet.
+- The API is under active development; expect breaking changes and incomplete features.
+
 MIT License
