@@ -1,43 +1,60 @@
 import { Router } from 'express';
+import { BhoonidhiApiClient } from '../utils/BhoonidhiApiClient';
 
 const router = Router();
 
-const mockCollections = [
-  'EOS-04_SAR-MRS_L2A',
-  'RESOURCESAT-2_LISS-III_L1',
-  'CARTOSAT-2F_PAN_L1',
-  'OCEANSAT-3_OCM_L2',
-];
+// Create Bhoonidhi API client instance
+const bhoonidhiClient = new BhoonidhiApiClient();
 
-router.get('/collections', (req, res) => {
+router.get('/collections', async (req, res) => {
   try {
-    res.status(200).json({ collections: mockCollections });
+    const userId = (req as any).userId;
+    const bhoonidhiToken = (req as any).bhoonidhiToken;
+    
+    if (!bhoonidhiToken) {
+      return res.status(401).json({ error: 'Bhoonidhi token not found' });
+    }
+
+    // Get user email from request or use a default
+    const userEmail = (req as any).userEmail || `${userId}@example.com`;
+    
+    const collections = await bhoonidhiClient.getAllCollectionNames({
+      userId,
+      userEmail,
+      token: bhoonidhiToken,
+    });
+
+    res.status(200).json({ collections });
   } catch (err) {
+    console.error('Error fetching collections:', err);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 
-router.post('/search', (req, res) => {
+router.post('/search', async (req, res) => {
   try {
     const { collections, datetime, filter, filter_lang, intersects } = req.body;
-    // Return a mock FeatureCollection
-    const features = [
-      {
-        type: 'Feature',
-        id: 'mock-feature-1',
-        collection: collections?.[0] || mockCollections[0],
-        geometry: intersects || { type: 'Point', coordinates: [0, 0] },
-        properties: {
-          datetime: datetime || new Date().toISOString(),
-          mock: true,
-        },
-      },
-    ];
-    res.status(200).json({
-      type: 'FeatureCollection',
-      features,
-    });
+    const bhoonidhiToken = (req as any).bhoonidhiToken;
+    
+    if (!bhoonidhiToken) {
+      return res.status(401).json({ error: 'Bhoonidhi token not found' });
+    }
+
+    // Use Bhoonidhi API for product search
+    const searchBody = {
+      action: 'SEARCH',
+      collections: collections || [],
+      datetime: datetime || '',
+      filter: filter || '',
+      filter_lang: filter_lang || 'cql2-json',
+      intersects: intersects || null,
+    };
+
+    const searchResults = await bhoonidhiClient.searchProducts(searchBody, bhoonidhiToken);
+    
+    res.status(200).json(searchResults);
   } catch (err) {
+    console.error('Error searching products:', err);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
