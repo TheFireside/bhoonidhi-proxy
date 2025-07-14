@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Request } from 'express';
 import { BhoonidhiApiClient } from '../utils/BhoonidhiApiClient';
 
 const router = Router();
@@ -6,22 +6,28 @@ const router = Router();
 // Create Bhoonidhi API client instance
 const bhoonidhiClient = new BhoonidhiApiClient();
 
-router.get('/collections', async (req, res) => {
+interface BhoonidhiRequest extends Request {
+  userId?: string;
+  bhoonidhiToken?: string;
+  userEmail?: string;
+}
+
+router.get('/collections', async (req: BhoonidhiRequest, res) => {
   try {
-    const userId = (req as any).userId;
-    const bhoonidhiToken = (req as any).bhoonidhiToken;
-    
+    const userId = req.userId;
+    const bhoonidhiToken = req.bhoonidhiToken;
+
     if (!bhoonidhiToken) {
       return res.status(401).json({ error: 'Bhoonidhi token not found' });
     }
 
     // Get user email from request or use a default
-    const userEmail = (req as any).userEmail || `${userId}@example.com`;
-    
+    const userEmail = req.userEmail || `${userId}@example.com`;
+
     const collections = await bhoonidhiClient.getAllCollectionNames({
-      userId,
-      userEmail,
-      token: bhoonidhiToken,
+      userId: userId || '',
+      userEmail: userEmail || '',
+      token: bhoonidhiToken || '',
     });
 
     res.status(200).json({ collections });
@@ -31,11 +37,11 @@ router.get('/collections', async (req, res) => {
   }
 });
 
-router.post('/search', async (req, res) => {
+router.post('/search', async (req: BhoonidhiRequest, res) => {
   try {
     const { collections, datetime, filter, filter_lang, intersects } = req.body;
-    const bhoonidhiToken = (req as any).bhoonidhiToken;
-    
+    const bhoonidhiToken = req.bhoonidhiToken;
+
     if (!bhoonidhiToken) {
       return res.status(401).json({ error: 'Bhoonidhi token not found' });
     }
@@ -51,7 +57,7 @@ router.post('/search', async (req, res) => {
     };
 
     const searchResults = await bhoonidhiClient.searchProducts(searchBody, bhoonidhiToken);
-    
+
     res.status(200).json(searchResults);
   } catch (err) {
     console.error('Error searching products:', err);
