@@ -28,7 +28,7 @@ export class BhoonidhiApiClient {
 
   private async post(
     url: string,
-    data: any,
+    data: Record<string, string> | URLSearchParams,
     {
       token,
       cookie,
@@ -140,15 +140,15 @@ export class BhoonidhiApiClient {
     );
   }
 
-  async searchProducts(body: Record<string, any>, token: string, cookie?: string) {
+  async searchProducts(body: Record<string, string>, token: string, cookie?: string) {
     return this.post('/bhoonidhi/ProductSearch', body, { token, cookie });
   }
 
-  async addToCart(body: Record<string, any>, token: string, cookie?: string) {
+  async addToCart(body: Record<string, string>, token: string, cookie?: string) {
     return this.post('/bhoonidhi/OpenOrderCart', body, { token, cookie });
   }
 
-  async addToCartV2(body: Record<string, any>, token: string, cookie?: string) {
+  async addToCartV2(body: Record<string, string>, token: string, cookie?: string) {
     return this.post('/bhoonidhi/CartServlet', body, { token, cookie });
   }
 
@@ -170,11 +170,15 @@ export class BhoonidhiApiClient {
     );
   }
 
-  async getCollectionDataAvailability(body: Record<string, any>, token: string, cookie?: string) {
+  async getCollectionDataAvailability(
+    body: Record<string, string>,
+    token: string,
+    cookie?: string,
+  ) {
     return this.post('/bhoonidhi/ProductSearch', body, { token, cookie });
   }
 
-  async confirmCartItems(body: Record<string, any>, token: string, cookie?: string) {
+  async confirmCartItems(body: Record<string, string>, token: string, cookie?: string) {
     return this.post('/bhoonidhi/CartServlet', body, { token, cookie });
   }
 }
