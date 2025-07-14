@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { validateAccessToken } from '../utils/tokenManager';
+import { validateAccessToken, getBhoonidhiToken } from '../utils/tokenManager';
 
 export function requireAuth(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers['authorization'];
@@ -12,5 +12,7 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
     return res.status(401).json({ error: 'Invalid or expired access token' });
   }
   (req as any).userId = userId;
+  (req as any).bhoonidhiToken = getBhoonidhiToken(userId);
+  
   next();
 }
