@@ -8,7 +8,7 @@ if (require.main === module) {
   const server = app.listen(port, () => {
     console.log(`Server running on http://localhost:${port}`);
   });
-  server.on('error', (err: any) => {
+  server.on('error', (err: NodeJS.ErrnoException) => {
     if (err.code === 'EADDRINUSE') {
       console.error(`Port ${port} is already in use. Please use a different port.`);
       process.exit(1);
