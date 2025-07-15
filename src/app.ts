@@ -17,5 +17,8 @@ app.use(bodyParser.json());
 app.use('/auth', authRoutes);
 app.use('/data', requireAuth, dataRoutes);
 app.use('/download', requireAuth, downloadRoutes);
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
 
 export default app;
