@@ -6,7 +6,7 @@
     "description": "API specification for accessing Bhoonidhi Earth Observation Satellite Data Platform."
   },
   "servers": [
-    { "url": "https://bhoonidhi-api.nrsc.gov.in" }
+    { "url": "https://bhoonidhi-proxy.onrender.com" }
   ],
   "paths": {
     "/auth/token": {
