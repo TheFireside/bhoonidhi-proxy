@@ -1,4 +1,4 @@
-import dotenv from 'dotenv';
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
@@ -6,8 +6,6 @@ import authRoutes from './routes/auth';
 import dataRoutes from './routes/data';
 import downloadRoutes from './routes/download';
 import { requireAuth } from './utils/authMiddleware';
-
-dotenv.config();
 
 const app = express();
 
