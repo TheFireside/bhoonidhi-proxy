@@ -308,11 +308,52 @@
         }
       }
     },
+    "/data/collections": {
+      "get": {
+        "summary": "Get All Collections",
+        "description": "Retrieves a list of all available data collections from the STAC catalogue.",
+        "tags": ["Collection"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "A successful response returning a list of available collections.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "collections": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "description": "A STAC Collection object."
+                      }
+                    },
+                    "links": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized. Invalid or expired session."
+          },
+          "500": {
+            "description": "Internal Server Error."
+          }
+        }
+      }
+    },
     "/data/collections/{collection_id}": {
       "get": {
         "summary": "Get Collection Details",
         "description": "Retrieves the details for a specific collection.",
-        "tags": ["Data Search"],
+        "tags": ["Collection"],
         "security": [{ "bearerAuth": [] }],
         "parameters": [
           {
@@ -334,7 +375,7 @@
       "get": {
         "summary": "Get All Items in a Collection",
         "description": "Retrieves all items within a specific collection.",
-        "tags": ["Data Search"],
+        "tags": ["Collection"],
         "security": [{ "bearerAuth": [] }],
         "parameters": [
           {
@@ -363,7 +404,7 @@
       "get": {
         "summary": "Get Details of an Item",
         "description": "Retrieves the details of a specific item within a collection.",
-        "tags": ["Data Search"],
+        "tags": ["Collection"],
         "security": [{ "bearerAuth": [] }],
         "parameters": [
           {
