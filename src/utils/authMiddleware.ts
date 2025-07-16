@@ -1,5 +1,5 @@
 import { Response, NextFunction, Request } from 'express';
-import { validateAccessToken, getBhoonidhiToken } from '../utils/tokenManager';
+import { tokenManager } from '../utils/tokenManager';
 
 interface AuthenticatedRequest extends Request {
   userId?: string;
@@ -12,12 +12,12 @@ export function requireAuth(req: AuthenticatedRequest, res: Response, next: Next
     return res.status(401).json({ error: 'Missing or invalid Authorization header' });
   }
   const token = authHeader.replace('Bearer ', '');
-  const userId = validateAccessToken(token);
+  const userId = tokenManager.validateAccessToken(token);
   if (!userId) {
     return res.status(401).json({ error: 'Invalid or expired access token' });
   }
   req.userId = userId;
-  req.bhoonidhiToken = getBhoonidhiToken(userId);
+  req.bhoonidhiToken = tokenManager.getBhoonidhiToken(userId);
 
   next();
 }

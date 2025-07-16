@@ -1,70 +1,84 @@
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 
-const ACCESS_SECRET = process.env.JWT_SECRET || '';
-const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || '';
+export class TokenManager {
+  private accessSecret: string;
+  private refreshSecret: string;
+  private bhoonidhiTokens: Map<string, string>;
 
-// In-memory store for Bhoonidhi tokens (in production, use Redis or database)
-const bhoonidhiTokens = new Map<string, string>();
-
-export function generateAccessToken(userId: string): string {
-  return jwt.sign({ userId }, ACCESS_SECRET, { expiresIn: '1h' });
-}
-
-export function generateRefreshToken(userId: string): string {
-  return jwt.sign({ userId }, REFRESH_SECRET, { expiresIn: '7d' });
-}
-
-export function validateAccessToken(token: string): string | null {
-  try {
-    const payload = jwt.verify(token, ACCESS_SECRET) as { userId: string };
-    return payload.userId;
-  } catch {
-    return null;
+  constructor(accessSecret: string, refreshSecret: string) {
+    if (!accessSecret || !refreshSecret) {
+      throw new Error('Access and refresh secrets must be provided');
+    }
+    this.accessSecret = accessSecret;
+    this.refreshSecret = refreshSecret;
+    this.bhoonidhiTokens = new Map<string, string>();
   }
-}
 
-export function validateRefreshToken(token: string): string | null {
-  try {
-    const payload = jwt.verify(token, REFRESH_SECRET) as { userId: string };
-    return payload.userId;
-  } catch {
-    return null;
+  generateAccessToken(userId: string, expiresIn?: SignOptions['expiresIn']): string {
+    return jwt.sign({ userId }, this.accessSecret, { expiresIn: expiresIn ?? '1h' });
   }
-}
 
-// Bhoonidhi token management
-export function storeBhoonidhiToken(userId: string, bhoonidhiToken: string): void {
-  bhoonidhiTokens.set(userId, bhoonidhiToken);
-}
+  generateRefreshToken(userId: string, expiresIn?: SignOptions['expiresIn']): string {
+    return jwt.sign({ userId }, this.refreshSecret, { expiresIn: expiresIn ?? '7d' });
+  }
 
-export function getBhoonidhiToken(userId: string): string | undefined {
-  return bhoonidhiTokens.get(userId);
-}
+  validateAccessToken(token: string): string | null {
+    try {
+      const payload = jwt.verify(token, this.accessSecret) as { userId: string };
+      return payload.userId;
+    } catch {
+      return null;
+    }
+  }
 
-export function removeBhoonidhiToken(userId: string): void {
-  bhoonidhiTokens.delete(userId);
-}
+  validateRefreshToken(token: string): string | null {
+    try {
+      const payload = jwt.verify(token, this.refreshSecret) as { userId: string };
+      return payload.userId;
+    } catch {
+      return null;
+    }
+  }
 
-/**
- * Returns the number of milliseconds until the token expires, based on its "exp" claim.
- * If the token is expired, returns 0. If no exp claim, returns undefined.
- * @param token JWT token string
- */
-export function getTokenExpiryMs(token: string): number | undefined {
-  try {
-    const decoded = jwt.decode(token) as { expiresAtTime?: string } | null;
-    if (!decoded || typeof decoded.expiresAtTime !== 'string') {
+  // Bhoonidhi token management
+  storeBhoonidhiToken(userId: string, bhoonidhiToken: string): void {
+    this.bhoonidhiTokens.set(userId, bhoonidhiToken);
+  }
+
+  getBhoonidhiToken(userId: string): string | undefined {
+    return this.bhoonidhiTokens.get(userId);
+  }
+
+  removeBhoonidhiToken(userId: string): void {
+    this.bhoonidhiTokens.delete(userId);
+  }
+
+  /**
+   * Returns the number of milliseconds until the token expires, based on its "exp" claim.
+   * If the token is expired, returns 0. If no exp claim, returns undefined.
+   * @param token JWT token string
+   */
+  getTokenExpiryMs(token: string): number | undefined {
+    try {
+      const decoded = jwt.decode(token) as { expiresAtTime?: string } | null;
+      if (!decoded || typeof decoded.expiresAtTime !== 'string') {
+        return undefined;
+      }
+      const isoString = decoded.expiresAtTime.replace(' ', 'T') + 'Z';
+      const expiryDate = new Date(isoString);
+      if (isNaN(expiryDate.getTime())) {
+        return undefined;
+      }
+      const now = Date.now();
+      const msLeft = expiryDate.getTime() - now;
+      return msLeft > 0 ? msLeft : 0;
+    } catch {
       return undefined;
     }
-    const isoString = decoded.expiresAtTime.replace(' ', 'T') + 'Z';
-    const expiryDate = new Date(isoString);
-    if (isNaN(expiryDate.getTime())) {
-      return undefined;
-    }
-    const now = Date.now();
-    const msLeft = expiryDate.getTime() - now;
-    return msLeft > 0 ? msLeft : 0;
-  } catch {
-    return undefined;
   }
 }
+
+export const tokenManager = new TokenManager(
+  process.env.JWT_SECRET || '',
+  process.env.JWT_REFRESH_SECRET || '',
+);

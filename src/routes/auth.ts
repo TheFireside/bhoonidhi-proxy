@@ -1,13 +1,5 @@
 import { Router } from 'express';
-import {
-  generateAccessToken,
-  generateRefreshToken,
-  validateRefreshToken,
-  validateAccessToken,
-  storeBhoonidhiToken,
-  removeBhoonidhiToken,
-  getTokenExpiryMs,
-} from '../utils/tokenManager';
+import { tokenManager } from '../utils/tokenManager';
 import { BhoonidhiApiClient } from '../utils/BhoonidhiApiClient';
 
 const router = Router();
@@ -40,12 +32,12 @@ router.post('/token', async (req, res) => {
           const userObj = loginResponse.Results[0];
           const bhoonidhiToken = userObj.JWT;
 
-          storeBhoonidhiToken(userId, bhoonidhiToken);
-          const tokenExpiry = await getTokenExpiryMs(bhoonidhiToken);
+          tokenManager.storeBhoonidhiToken(userId, bhoonidhiToken);
+          const tokenExpiry = await tokenManager.getTokenExpiryMs(bhoonidhiToken);
 
           // Generate our own access and refresh tokens for session management
-          const accessToken = generateAccessToken(userId);
-          const refreshToken = generateRefreshToken(userId);
+          const accessToken = tokenManager.generateAccessToken(userId);
+          const refreshToken = tokenManager.generateRefreshToken(userId);
           refreshTokens.add(refreshToken);
 
           return res.status(200).json({
@@ -65,11 +57,11 @@ router.post('/token', async (req, res) => {
         return res.status(401).json({ error: 'Invalid refresh token' });
       }
       // Simulate refresh
-      const userId = validateRefreshToken(refresh_token);
+      const userId = tokenManager.validateRefreshToken(refresh_token);
       if (!userId) {
         return res.status(401).json({ error: 'Invalid refresh token' });
       }
-      const accessToken = generateAccessToken(userId);
+      const accessToken = tokenManager.generateAccessToken(userId);
       return res.status(200).json({
         access_token: accessToken,
         refresh_token,
@@ -110,9 +102,9 @@ router.post('/logout', async (req, res) => {
     }
 
     // Remove Bhoonidhi token from storage
-    const userId = validateAccessToken(token);
+    const userId = tokenManager.validateAccessToken(token);
     if (userId) {
-      removeBhoonidhiToken(userId);
+      tokenManager.removeBhoonidhiToken(userId);
     }
 
     return res.status(200).json({ message: 'Logged out successfully' });
