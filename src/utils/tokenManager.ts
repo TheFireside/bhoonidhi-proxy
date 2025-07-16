@@ -1,4 +1,4 @@
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 
 export class TokenManager {
   private accessSecret: string;
@@ -6,17 +6,20 @@ export class TokenManager {
   private bhoonidhiTokens: Map<string, string>;
 
   constructor(accessSecret: string, refreshSecret: string) {
+    if (!accessSecret || !refreshSecret) {
+      throw new Error('Access and refresh secrets must be provided');
+    }
     this.accessSecret = accessSecret;
     this.refreshSecret = refreshSecret;
     this.bhoonidhiTokens = new Map<string, string>();
   }
 
-  generateAccessToken(userId: string): string {
-    return jwt.sign({ userId }, this.accessSecret, { expiresIn: '1h' });
+  generateAccessToken(userId: string, expiresIn?: SignOptions['expiresIn']): string {
+    return jwt.sign({ userId }, this.accessSecret, { expiresIn: expiresIn ?? '1h' });
   }
 
-  generateRefreshToken(userId: string): string {
-    return jwt.sign({ userId }, this.refreshSecret, { expiresIn: '7d' });
+  generateRefreshToken(userId: string, expiresIn?: SignOptions['expiresIn']): string {
+    return jwt.sign({ userId }, this.refreshSecret, { expiresIn: expiresIn ?? '7d' });
   }
 
   validateAccessToken(token: string): string | null {
