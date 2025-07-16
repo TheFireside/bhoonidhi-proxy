@@ -1,42 +1,274 @@
 {
   "openapi": "3.0.0",
   "info": {
-    "title": "Bhoonidhi API",
+    "title": "Bhoonidhi Proxy API Specification",
     "version": "1.0.0",
-    "description": "API specification for accessing Bhoonidhi Earth Observation Satellite Data Platform."
+    "description": "This API provides the same interface and functionality as the original Bhoonidhi service, but acts as a wrapper for another service or for Bhoonidhi data from other sources. It enables developers and researchers to programmatically access and retrieve a diverse range of earth observation satellite data, with API search capabilities based on the STAC catalogue specifications.\n\n**Note:** If you are using the onrender.com server, please be aware that requests may experience a delay while the server starts up due to limitations of the free tier.",
+    "contact": {
+      "email": "vsumavane@outlook.com"
+    }
   },
   "servers": [
-    { "url": "https://bhoonidhi-proxy.onrender.com" }
+    {
+      "url": "https://bhoonidhi-proxy.onrender.com",
+      "description": "Production Server"
+    }
   ],
+  "components": {
+    "schemas": {
+      "AccessTokenRequest": {
+        "type": "object",
+        "required": ["userId", "password"],
+        "properties": {
+          "userId": {
+            "type": "string",
+            "description": "The user's unique identifier.",
+            "example": "bhoonidhiuser"
+          },
+          "password": {
+            "type": "string",
+            "description": "The user's password.",
+            "format": "password",
+            "example": "password@123"
+          }
+        }
+      },
+      "RefreshTokenRequest": {
+        "type": "object",
+        "required": ["userId", "refresh_token", "grant_type"],
+        "properties": {
+          "userId": {
+            "type": "string",
+            "description": "The user's unique identifier.",
+            "example": "bhoonidhiuser"
+          },
+          "refresh_token": {
+            "type": "string",
+            "description": "The refresh token obtained during the initial authentication.",
+            "example": "eyJhbGci0iJIUzUxMgfhgfhiJ9.eyJzdWIi0iJPTkxfbmFzZWViIiwiaWF0IjoxNzfyhhghIwNjk2NTMwLCJleHAiOjE3MjA3MTQ1MzB9.c-rukaI-9N9uLzqRQsKffghgfhS1GZI7fgAPZ0hAa-Clb3u47Q6kIw7LNkpyeGpusa7wkpk2-swFPK0Efr_CX1f-DmlA"
+          },
+          "grant_type": {
+            "type": "string",
+            "description": "Must be set to 'refresh_token'.",
+            "enum": ["refresh_token"]
+          }
+        }
+      },
+      "TokenResponse": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "example": "bhoonidhiuser"
+          },
+          "access_token": {
+            "type": "string",
+            "description": "The short-lived JWT access token.",
+            "example": "eyJhbGcidfgdUzdgisvJ9.eyJ0aW1lc3RhbXAi0jE3MjEwNDQxMzIzMDksInN112345k90TF9hYmNwcXIiLCJpYXQi0jE3MjEwNDQxMzIsImV4cCI6MTcyMTA0NTMzMn0.S13P1Y0mCKgbpSTO-BmySigpLZa2ibKnU1Bw-owWBU9vpH2my0MHxGnOLLGazV10JKleGurhm-9Zy20KEskA0w"
+          },
+          "token_type": {
+            "type": "string",
+            "description": "The type of the token.",
+            "example": "Bearer"
+          },
+          "expires_in": {
+            "type": "integer",
+            "description": "The lifetime in seconds of the access token.",
+            "example": 1200
+          },
+          "refresh_token": {
+            "type": "string",
+            "description": "The long-lived token to get a new access token.",
+            "example": "eyJhbGcidfgdUzUxMiJ9.eyJzdWIiOiJPTkxfYWJjcHFyIiwiaWF0IjoxNzIxMDQ0MTMyLC09876iOjE3MjEwNjIxMzJ9.31eyXxroTEXGIUEwEztt07JGe4WpcZXeKJ_BZ6jsP3iW0qAl_F7n6BHsxlIwadF_tfRmxq4uF4StS8yN1DqA7Q"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "ErrorCode": {
+            "type": "string",
+            "description": "The error code identifying the issue."           },
+          "Description": {
+            "type": "string",
+            "description": "A human-readable description of the error."           },
+          "Action": {
+            "type": "string",
+            "description": "Suggested action to resolve the error."           }
+        }
+      },
+      "GeoJSONGeometry": {
+        "type": "object",
+        "description": "GeoJSON geometry to search for intersecting items.",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["Point", "MultiPoint", "LineString", "MultiLineString", "Polygon", "MultiPolygon"]
+          },
+          "coordinates": {
+            "type": "array",
+            "items": {}
+          }
+        },
+        "example": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [-15.706019901023444, 17.50409862311953],
+              [-15.204430443106522, 18.10105932077886],
+              [68.43561166453935, 21.63831711003979],
+              [68.93720112245624, 20.937274866185614],
+              [-15.706019901023444, 17.50409862311953]
+            ]
+          ]
+        }
+      },
+      "CQL2Filter": {
+        "type": "object",
+        "description": "Filter expression using cql2-json language.",
+        "properties": {
+          "op": {
+            "type": "string",
+            "description": "The logical operator for the filter (e.g., 'and', 'eq')."           },
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        },
+        "example": {
+          "op": "and",
+          "args": [
+            { "op": "eq", "args": [{ "property": "Polarization" }, "DH"] },
+            { "op": "eq", "args": [{ "property": "Look_Direction" }, "RIGHT"] }
+          ]
+        }
+      },
+      "SearchRequest": {
+        "type": "object",
+        "properties": {
+          "collections": {
+            "type": "array",
+            "description": "Array of one or more Collection IDs to search in.",
+            "items": {
+              "type": "string"
+            },
+            "example": ["EOS-04_SAR-MRS_L2A", "EOS-06_OCM-LAC_L1C"]
+          },
+          "datetime": {
+            "type": "string",
+            "description": "Date range to filter results, formatted as RFC 3339.",
+            "example": "2023-11-02T00:00:00Z/2023-11-03T23:59:59Z"
+          },
+          "intersects": {
+            "$ref": "#/components/schemas/GeoJSONGeometry"
+          },
+          "filter": {
+            "$ref": "#/components/schemas/CQL2Filter"
+          },
+          "filter-lang": {
+            "type": "string",
+            "description": "Language of the filter being used.",
+            "enum": ["cql2-json"],
+            "default": "cql2-json"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "The maximum number of results to return (max 500).",
+            "default": 10,
+            "maximum": 500
+          },
+          "bbox": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 4,
+            "maxItems": 4,
+            "example": [-80.67, -0.52, -78.06, 1.68]
+          },
+          "ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": ["E04_SAR_MRS_28DEC2023_362001201630_10311_STUCO0ZTD_13022_22_DH_D_R_N06308_E084544"]
+          },
+          "sortby": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "field": { "type": "string" },
+                "direction": { "type": "string", "enum": ["asc", "desc"] }
+              }
+            }
+          }
+        }
+      },
+      "SearchResponse": {
+        "type": "object",
+        "description": "STAC FeatureCollection response.",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "FeatureCollection"
+          },
+          "context": {
+            "type": "object",
+            "properties": {
+              "returned": {
+                "type": "integer",
+                "description": "Number of items returned in the response."               },
+              "limit": {
+                "type": "integer",
+                "description": "The maximum number of items requested."               }
+            }
+          },
+          "features": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "links": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "A JWT access token is required to be sent in the 'Authorization' header as a Bearer token."       },
+      "refreshTokenAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "A JWT refresh token is required to be sent in the 'Authorization' header as a Bearer token for logout."       }
+    }
+  },
   "paths": {
     "/auth/token": {
       "post": {
-        "summary": "Obtain Access or Refresh Token",
-        "description": "Authenticate user and receive access token for API usage.",
+        "summary": "Request Access and Refresh Tokens",
+        "description": "Authenticates a user and provides an access token and a refresh token.  It can also be used to get a new access token using a refresh token. ",
+        "tags": ["Authentication"],
         "requestBody": {
+          "description": "Provide user credentials to get an access token, or a refresh token to get a new access token.",
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "oneOf": [
-                  {
-                    "type": "object",
-                    "properties": {
-                      "userId": { "type": "string" },
-                      "password": { "type": "string" },
-                      "grant_type": { "type": "string", "enum": ["password"] }
-                    },
-                    "required": ["userId", "password", "grant_type"]
-                  },
-                  {
-                    "type": "object",
-                    "properties": {
-                      "userId": { "type": "string" },
-                      "refresh_token": { "type": "string" },
-                      "grant_type": { "type": "string", "enum": ["refresh_token"] }
-                    },
-                    "required": ["userId", "refresh_token", "grant_type"]
-                  }
+                  { "$ref": "#/components/schemas/AccessTokenRequest" },
+                  { "$ref": "#/components/schemas/RefreshTokenRequest" }
                 ]
               }
             }
@@ -44,42 +276,43 @@
         },
         "responses": {
           "200": {
-            "description": "Successful token generation",
+            "description": "Authentication successful.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "userId": { "type": "string" },
-                    "access_token": { "type": "string" },
-                    "token_type": { "type": "string" },
-                    "expires_in": { "type": "integer" },
-                    "refresh_token": { "type": "string" }
-                  }
+                  "$ref": "#/components/schemas/TokenResponse"
+                },
+                "examples": {
+                  "AccessTokenResponse": { "$ref": "#/components/schemas/TokenResponse/properties/access_token/example" },
+                  "RefreshTokenResponse": { "$ref": "#/components/schemas/TokenResponse/properties/access_token/example" }
                 }
               }
             }
           },
-          "400": { "description": "Bad Request" },
-          "401": { "description": "Unauthorized" },
-          "403": { "description": "Forbidden" },
-          "500": { "description": "Internal Server Error" }
+          "400": { "description": "Bad Request. Incorrect keys in the request. " },
+          "401": { "description": "Unauthorized. Incorrect password. " },
+          "403": { "description": "Forbidden. Maximum active sessions reached. " },
+          "500": { "description": "Internal Server Error."  }
         }
       }
     },
     "/auth/logout": {
       "post": {
-        "summary": "Logout and revoke refresh token",
-        "security": [{ "bearerAuth": [] }],
+        "summary": "Logout User Session",
+        "description": "Securely terminates the user's session and revokes the refresh token.",
+        "tags": ["Authentication"],
+        "security": [{ "refreshTokenAuth": [] }],
         "responses": {
-          "200": { "description": "Logged out successfully" },
-          "401": { "description": "Unauthorized" }
+          "204": { "description": "Logout successful. Session terminated." },
+          "401": { "description": "Unauthorized. Invalid refresh token." }
         }
       }
     },
     "/data/search": {
       "post": {
-        "summary": "Search satellite data",
+        "summary": "Search for STAC Items",
+        "description": "Search for satellite data products from the Bhoonidhi STAC catalogue using a JSON request body.",
+        "tags": ["Data Search"],
         "security": [{ "bearerAuth": [] }],
         "requestBody": {
           "required": true,
@@ -91,101 +324,66 @@
         },
         "responses": {
           "200": {
-            "description": "Success",
+            "description": "Search successful.",
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/SearchResponse" }
               }
             }
           },
-          "401": { "description": "Unauthorized" },
-          "500": { "description": "Internal Server Error" }
+          "401": { "description": "Unauthorized. Invalid or expired session. " },
+          "500": { "description": "Internal Server Error. " },
+          "503": { "description": "Service Unavailable. STAC connection failed. " }
+        }
+      },
+      "get": {
+        "summary": "Search for STAC Items (GET)",
+        "description": "Search for satellite data products using query parameters.",
+        "tags": ["Data Search"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "in": "query", "name": "datetime", "schema": { "type": "string" }, "description": "RFC 3339 date range."  },
+          { "in": "query", "name": "bbox", "schema": { "type": "string" }, "description": "Bounding box."  },
+          { "in": "query", "name": "limit", "schema": { "type": "integer" }, "description": "Number of results to return."  }
+        ],
+        "responses": {
+          "200": {
+            "description": "Search successful.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SearchResponse" }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized. Invalid or expired session."  },
+          "500": { "description": "Internal Server Error."  }
         }
       }
     },
     "/download": {
       "get": {
-        "summary": "Download data product",
+        "summary": "Download Data Product",
+        "description": "Downloads a specific data product using its item ID and collection name. Note: Only download products with the property 'Online' = 'Y'. ",
+        "tags": ["Data Download"],
         "security": [{ "bearerAuth": [] }],
         "parameters": [
-          { "in": "query", "name": "id", "schema": { "type": "string" }, "required": true },
-          { "in": "query", "name": "collection", "schema": { "type": "string" }, "required": true }
+          { "in": "query", "name": "id", "required": true, "schema": { "type": "string" }, "description": "The ID of the item to download."  },
+          { "in": "query", "name": "collection", "required": true, "schema": { "type": "string" }, "description": "The collection ID of the item."  }
         ],
         "responses": {
-          "200": { "description": "Download initiated" },
-          "401": { "description": "Unauthorized" },
-          "404": { "description": "Product not found" },
-          "412": { "description": "Concurrent downloads exceeded" },
-          "500": { "description": "Internal Server Error" },
-          "504": { "description": "Gateway Timeout" }
-        }
-      }
-    }
-  },
-  "components": {
-    "securitySchemes": {
-      "bearerAuth": {
-        "type": "http",
-        "scheme": "bearer"
-      }
-    },
-    "schemas": {
-      "SearchRequest": {
-        "type": "object",
-        "properties": {
-          "collections": { "type": "array", "items": { "type": "string" } },
-          "datetime": { "type": "string" },
-          "filter": { "type": "object" },
-          "filter-lang": { "type": "string", "enum": ["cql2-json"] },
-          "intersects": { "type": "object" },
-          "limit": { "type": "integer" },
-          "sortby": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "field": { "type": "string" },
-                "direction": { "type": "string", "enum": ["asc", "desc"] }
+          "200": {
+            "description": "Product download initiated. The response body contains the product file.",
+            "content": {
+              "application/octet-stream": {
+                "schema": { "type": "string", "format": "binary" }
               }
             }
           },
-          "fields": {
-            "type": "object",
-            "properties": {
-              "include": { "type": "array", "items": { "type": "string" } },
-              "exclude": { "type": "array", "items": { "type": "string" } }
-            }
-          },
-          "token": { "type": "string" },
-          "filter-crs": { "type": "string" }
-        }
-      },
-      "SearchResponse": {
-        "type": "object",
-        "properties": {
-          "type": { "type": "string" },
-          "context": {
-            "type": "object",
-            "properties": {
-              "limit": { "type": "integer" },
-              "returned": { "type": "integer" }
-            }
-          },
-          "features": {
-            "type": "array",
-            "items": { "type": "object" }
-          },
-          "links": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "rel": { "type": "string" },
-                "type": { "type": "string" },
-                "href": { "type": "string" }
-              }
-            }
-          }
+          "401": { "description": "Unauthorized. Invalid or expired session. " },
+          "404": { "description": "Product not found on online storage. " },
+          "412": { "description": "Precondition Failed. Concurrent download limit exceeded (5 per user)." },
+          "500": { "description": "Internal Server Error. " },
+          "504": { "description": "Gateway Timeout. Download interrupted. " }
         }
       }
     }
