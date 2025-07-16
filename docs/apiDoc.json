@@ -308,6 +308,86 @@
         }
       }
     },
+    "/data/collections/{collection_id}": {
+      "get": {
+        "summary": "Get Collection Details",
+        "description": "Retrieves the details for a specific collection.",
+        "tags": ["Data Search"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "collection_id",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "The ID of the collection."
+          }
+        ],
+        "responses": {
+          "200": { "description": "Successful retrieval of collection details." },
+          "401": { "description": "Unauthorized." },
+          "404": { "description": "Collection not found." }
+        }
+      }
+    },
+    "/data/collections/{collection_id}/items": {
+      "get": {
+        "summary": "Get All Items in a Collection",
+        "description": "Retrieves all items within a specific collection.",
+        "tags": ["Data Search"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "collection_id",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "The ID of the collection."
+          }
+        ],
+        "responses": {
+          "200": { 
+            "description": "Successful retrieval of items.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SearchResponse" }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized." },
+          "404": { "description": "Collection not found." }
+        }
+      }
+    },
+    "/data/collections/{collection_id}/items/{item_id}": {
+      "get": {
+        "summary": "Get Details of an Item",
+        "description": "Retrieves the details of a specific item within a collection.",
+        "tags": ["Data Search"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "collection_id",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "The ID of the collection."
+          },
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "The ID of the item."
+          }
+        ],
+        "responses": {
+          "200": { "description": "Successful retrieval of item details." },
+          "401": { "description": "Unauthorized." },
+          "404": { "description": "Item or Collection not found." }
+        }
+      }
+    },
     "/data/search": {
       "post": {
         "summary": "Search for STAC Items",
