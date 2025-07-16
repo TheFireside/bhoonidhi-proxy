@@ -80,5 +80,5 @@ export class TokenManager {
 
 export const tokenManager = new TokenManager(
   process.env.JWT_SECRET || '',
-  process.env.JWT_REFRESH_SECRET || ''
+  process.env.JWT_REFRESH_SECRET || '',
 );
