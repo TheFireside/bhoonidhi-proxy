@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { tokenManager } from '../utils/tokenManager';
-import { BhoonidhiApiClient } from '../utils/BhoonidhiApiClient';
+import { BhoonidhiApiClient, BhoonidhiLoginResponse } from '../utils/BhoonidhiApiClient';
 
 const router = Router();
 
@@ -29,7 +29,7 @@ router.post('/token', async (req, res) => {
           loginResponse.Results.length > 0 &&
           loginResponse.Results[0].JWT
         ) {
-          const userObj = loginResponse.Results[0];
+          const userObj = loginResponse.Results[0] as BhoonidhiLoginResponse;
           const bhoonidhiToken = userObj.JWT;
 
           tokenManager.storeBhoonidhiToken(userId, bhoonidhiToken);
@@ -41,9 +41,11 @@ router.post('/token', async (req, res) => {
           refreshTokens.add(refreshToken);
 
           return res.status(200).json({
+            userId: userObj.USERID,
             access_token: accessToken,
+            token_type: "Bearer",
+            expires_in: typeof tokenExpiry === "number" ? Math.floor(tokenExpiry / 1000) : 1200,
             refresh_token: refreshToken,
-            expires_in: tokenExpiry,
           });
         } else {
           return res.status(401).json({ error: 'Invalid credentials' });

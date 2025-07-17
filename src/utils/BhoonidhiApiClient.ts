@@ -1,5 +1,20 @@
 import axios, { AxiosInstance } from 'axios';
 
+export interface BhoonidhiLoginResponse {
+  MSG: string;
+  JWT: string;
+  USERCATNAME: string;
+  USEREMAIL: string;
+  TnC_ACC: string;
+  USERID: string;
+  GSTINFO: string;
+  USERNAME: string;
+  NUser: string;
+  GE_NGE: string;
+  USERCAT: string;
+  CARTCOUNT: string;
+}
+
 export class BhoonidhiApiClient {
   private axiosInstance: AxiosInstance;
 
