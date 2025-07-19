@@ -1,9 +1,9 @@
 import { Response, NextFunction, Request } from 'express';
 import { tokenManager } from '../utils/tokenManager';
+import { BhoonidhiLoginResponse } from './types/bhoonidhiApiClient.types';
 
-interface AuthenticatedRequest extends Request {
-  userId?: string;
-  bhoonidhiToken?: string;
+export interface AuthenticatedRequest extends Request {
+  bhoonidhiPayload?: BhoonidhiLoginResponse;
 }
 
 export function requireAuth(req: AuthenticatedRequest, res: Response, next: NextFunction) {
@@ -16,8 +16,8 @@ export function requireAuth(req: AuthenticatedRequest, res: Response, next: Next
   if (!userId) {
     return res.status(401).json({ error: 'Invalid or expired access token' });
   }
-  req.userId = userId;
-  req.bhoonidhiToken = tokenManager.getBhoonidhiToken(userId);
+  const bhoonidhiPayload = tokenManager.getBhoonidhiPayload(userId);
+  req.bhoonidhiPayload = bhoonidhiPayload;
 
   next();
 }

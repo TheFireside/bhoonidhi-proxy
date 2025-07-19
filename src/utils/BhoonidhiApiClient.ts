@@ -1,24 +1,12 @@
 import axios, { AxiosInstance } from 'axios';
-
-export interface BhoonidhiLoginResponse {
-  MSG: string;
-  JWT: string;
-  USERCATNAME: string;
-  USEREMAIL: string;
-  TnC_ACC: string;
-  USERID: string;
-  GSTINFO: string;
-  USERNAME: string;
-  NUser: string;
-  GE_NGE: string;
-  USERCAT: string;
-  CARTCOUNT: string;
-}
+import { AllCollections } from './types/bhoonidhiApiClient.types';
 
 export class BhoonidhiApiClient {
   private axiosInstance: AxiosInstance;
+  private baseURL: string;
 
   constructor(baseURL: string = 'https://bhoonidhi.nrsc.gov.in') {
+    this.baseURL=baseURL;
     this.axiosInstance = axios.create({
       baseURL,
       headers: {
@@ -64,7 +52,7 @@ export class BhoonidhiApiClient {
       Origin: 'https://bhoonidhi.nrsc.gov.in',
       Referer: 'https://bhoonidhi.nrsc.gov.in/bhoonidhi/index.html',
     };
-    const body = isForm ? new URLSearchParams(data).toString() : data;
+    const body = isForm ? JSON.stringify(data) : data;
     const response = await this.axiosInstance.post(url, body, { headers });
     return response.data;
   }
@@ -177,7 +165,7 @@ export class BhoonidhiApiClient {
     userEmail: string;
     token: string;
     cookie?: string;
-  }) {
+  }): Promise<AllCollections> {
     return this.post(
       '/bhoonidhi/SatSenServlet',
       { userId, action: 'GETAVCONFIG', userEmail },
@@ -195,5 +183,24 @@ export class BhoonidhiApiClient {
 
   async confirmCartItems(body: Record<string, string>, token: string, cookie?: string) {
     return this.post('/bhoonidhi/CartServlet', body, { token, cookie });
+  }
+
+  /**
+   * Constructs the download path for a product zip file, matching the logic from the reference code.
+   * Only uses the required args.
+   * @param args - Object containing required parameters
+   * @returns The download path as a string
+   */
+  getDownloadPath(args: {
+    sat: string;
+    sen: string;
+    year: string;
+    month: string;
+    prdId: string;
+    token: string;
+  }): string {
+    // Only use the needed args
+    const { sat, sen, year, month, prdId, token } = args;
+    return `/bhoonidhi/data/${sat}/${sen}/${year}/${month}/${prdId}.zip?token=${token}&product_id=${prdId}`;
   }
 }

@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { tokenManager } from '../utils/tokenManager';
-import { BhoonidhiApiClient, BhoonidhiLoginResponse } from '../utils/BhoonidhiApiClient';
+import { BhoonidhiApiClient } from '../utils/BhoonidhiApiClient';
+import { BhoonidhiLoginResponse } from '../utils/types/bhoonidhiApiClient.types';
 
 const router = Router();
 
@@ -29,19 +30,36 @@ router.post('/token', async (req, res) => {
           loginResponse.Results.length > 0 &&
           loginResponse.Results[0].JWT
         ) {
-          const userObj = loginResponse.Results[0] as BhoonidhiLoginResponse;
-          const bhoonidhiToken = userObj.JWT;
+          const dataObj = loginResponse.Results[0] as BhoonidhiLoginResponse;
 
-          tokenManager.storeBhoonidhiToken(userId, bhoonidhiToken);
-          const tokenExpiry = await tokenManager.getTokenExpiryMs(bhoonidhiToken);
+          tokenManager.storeBhoonidhiPayload(dataObj.USERID, dataObj);
+          const tokenExpiry = await tokenManager.getTokenExpiryMs(dataObj.JWT);
 
-          // Generate our own access and refresh tokens for session management
-          const accessToken = tokenManager.generateAccessToken(userId);
-          const refreshToken = tokenManager.generateRefreshToken(userId);
+          const sessionId = Math.floor(Math.random() * 1000000); // Simple random session ID
+          const ipAddress = req.ip || req.connection?.remoteAddress || '';
+          let expiresAt;
+          if (typeof tokenExpiry === 'number') {
+            expiresAt = new Date(Date.now() + tokenExpiry);
+          } else {
+            expiresAt = new Date(Date.now() + 60 * 60 * 1000); // fallback 1 hour
+          }
+          const pad = (n: number) => n.toString().padStart(2, '0');
+          const expiresAtTime = `${expiresAt.getFullYear()}-${pad(expiresAt.getMonth() + 1)}-${pad(expiresAt.getDate())} ${pad(expiresAt.getHours())}:${pad(expiresAt.getMinutes())}:${pad(expiresAt.getSeconds())}`;
+
+          const tokenPayload = {
+            sub: 'Auth',
+            UserID: dataObj.USERID,
+            IPAddress: ipAddress,
+            SessionID: sessionId,
+            expiresAtTime,
+          };
+
+          const accessToken = tokenManager.generateAccessToken(tokenPayload);
+          const refreshToken = tokenManager.generateRefreshToken(tokenPayload);
           refreshTokens.add(refreshToken);
 
           return res.status(200).json({
-            userId: userObj.USERID,
+            userId: dataObj.USERID,
             access_token: accessToken,
             token_type: "Bearer",
             expires_in: typeof tokenExpiry === "number" ? Math.floor(tokenExpiry / 1000) : 1200,
@@ -63,7 +81,21 @@ router.post('/token', async (req, res) => {
       if (!userId) {
         return res.status(401).json({ error: 'Invalid refresh token' });
       }
-      const accessToken = tokenManager.generateAccessToken(userId);
+      // Reconstruct a minimal payload for refresh
+      const ipAddress = req.ip || req.connection?.remoteAddress || '';
+      const sessionId = Math.floor(Math.random() * 1000000);
+      const now = new Date();
+      const expiresAt = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour from now
+      const pad = (n: number) => n.toString().padStart(2, '0');
+      const expiresAtTime = `${expiresAt.getFullYear()}-${pad(expiresAt.getMonth() + 1)}-${pad(expiresAt.getDate())} ${pad(expiresAt.getHours())}:${pad(expiresAt.getMinutes())}:${pad(expiresAt.getSeconds())}`;
+      const tokenPayload = {
+        sub: 'Auth',
+        UserID: userId,
+        IPAddress: ipAddress,
+        SessionID: sessionId,
+        expiresAtTime,
+      };
+      const accessToken = tokenManager.generateAccessToken(tokenPayload);
       return res.status(200).json({
         access_token: accessToken,
         refresh_token,

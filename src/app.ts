@@ -13,7 +13,7 @@ app.use(cors());
 app.use(bodyParser.json());
 
 app.use('/auth', authRoutes);
-app.use('/data', requireAuth, dataRoutes);
+app.use('/data', dataRoutes);
 app.use('/download', requireAuth, downloadRoutes);
 app.get('/', (req, res) => {
   const apiDocUrl = process.env.API_DOC_URL || '';

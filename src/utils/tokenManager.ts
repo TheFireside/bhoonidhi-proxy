@@ -1,9 +1,18 @@
 import jwt, { SignOptions } from 'jsonwebtoken';
+import { BhoonidhiLoginResponse } from './types/bhoonidhiApiClient.types';
+
+export interface TokenPayload {
+  sub: string;
+  UserID: string;
+  IPAddress: string;
+  SessionID: number;
+  expiresAtTime: string;
+}
 
 export class TokenManager {
   private accessSecret: string;
   private refreshSecret: string;
-  private bhoonidhiTokens: Map<string, string>;
+  private bhoonidhiTokens: Map<string, BhoonidhiLoginResponse>;
 
   constructor(accessSecret: string, refreshSecret: string) {
     if (!accessSecret || !refreshSecret) {
@@ -11,21 +20,21 @@ export class TokenManager {
     }
     this.accessSecret = accessSecret;
     this.refreshSecret = refreshSecret;
-    this.bhoonidhiTokens = new Map<string, string>();
+    this.bhoonidhiTokens = new Map<string, BhoonidhiLoginResponse>();
   }
 
-  generateAccessToken(userId: string, expiresIn?: SignOptions['expiresIn']): string {
-    return jwt.sign({ userId }, this.accessSecret, { expiresIn: expiresIn ?? '1h' });
+  generateAccessToken(payload: object, expiresIn?: SignOptions['expiresIn']): string {
+    return jwt.sign(payload, this.accessSecret, { expiresIn: expiresIn ?? '1h' });
   }
 
-  generateRefreshToken(userId: string, expiresIn?: SignOptions['expiresIn']): string {
-    return jwt.sign({ userId }, this.refreshSecret, { expiresIn: expiresIn ?? '7d' });
+  generateRefreshToken(payload: object, expiresIn?: SignOptions['expiresIn']): string {
+    return jwt.sign(payload, this.refreshSecret, { expiresIn: expiresIn ?? '7d' });
   }
 
   validateAccessToken(token: string): string | null {
     try {
-      const payload = jwt.verify(token, this.accessSecret) as { userId: string };
-      return payload.userId;
+      const payload = jwt.verify(token, this.accessSecret) as TokenPayload;
+      return payload.UserID;
     } catch {
       return null;
     }
@@ -33,19 +42,19 @@ export class TokenManager {
 
   validateRefreshToken(token: string): string | null {
     try {
-      const payload = jwt.verify(token, this.refreshSecret) as { userId: string };
-      return payload.userId;
+      const payload = jwt.verify(token, this.refreshSecret) as TokenPayload;
+      return payload.UserID;
     } catch {
       return null;
     }
   }
 
   // Bhoonidhi token management
-  storeBhoonidhiToken(userId: string, bhoonidhiToken: string): void {
-    this.bhoonidhiTokens.set(userId, bhoonidhiToken);
+  storeBhoonidhiPayload(userId: string, payload: BhoonidhiLoginResponse): void {
+    this.bhoonidhiTokens.set(userId, payload);
   }
 
-  getBhoonidhiToken(userId: string): string | undefined {
+  getBhoonidhiPayload(userId: string): BhoonidhiLoginResponse | undefined {
     return this.bhoonidhiTokens.get(userId);
   }
 
