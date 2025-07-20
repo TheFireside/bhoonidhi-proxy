@@ -5,8 +5,6 @@ import { BhoonidhiLoginResponse } from '../utils/types/bhoonidhiApiClient.types'
 
 const router = Router();
 
-const refreshTokens = new Set<string>();
-
 const bhoonidhiClient = new BhoonidhiApiClient();
 
 router.post('/token', async (req, res) => {
@@ -32,8 +30,9 @@ router.post('/token', async (req, res) => {
         ) {
           const dataObj = loginResponse.Results[0] as BhoonidhiLoginResponse;
 
-          tokenManager.storeBhoonidhiPayload(dataObj.USERID, dataObj);
           const tokenExpiry = await tokenManager.getTokenExpiryMs(dataObj.JWT);
+          const ttlSeconds = typeof tokenExpiry === 'number' ? Math.floor(tokenExpiry / 1000) : 3600;
+          await tokenManager.storeBhoonidhiPayload(dataObj.USERID, dataObj, ttlSeconds);
 
           const sessionId = Math.floor(Math.random() * 1000000); // Simple random session ID
           const ipAddress = req.ip || req.connection?.remoteAddress || '';
@@ -56,7 +55,7 @@ router.post('/token', async (req, res) => {
 
           const accessToken = tokenManager.generateAccessToken(tokenPayload);
           const refreshToken = tokenManager.generateRefreshToken(tokenPayload);
-          refreshTokens.add(refreshToken);
+          await tokenManager.storeRefreshToken(dataObj.USERID, refreshToken, 604800);
 
           return res.status(200).json({
             userId: dataObj.USERID,
@@ -73,14 +72,21 @@ router.post('/token', async (req, res) => {
         return res.status(401).json({ error: 'Authentication failed' });
       }
     } else if (grant_type === 'refresh_token') {
-      if (!refresh_token || !refreshTokens.has(refresh_token)) {
+      if (!refresh_token) {
         return res.status(401).json({ error: 'Invalid refresh token' });
       }
-      // Simulate refresh
+      // Find userId by decoding the refresh token
       const userId = tokenManager.validateRefreshToken(refresh_token);
       if (!userId) {
         return res.status(401).json({ error: 'Invalid refresh token' });
       }
+      // Check if the refresh token matches the one in Redis
+      const storedRefreshToken = await tokenManager.getRefreshToken(userId);
+      if (storedRefreshToken !== refresh_token) {
+        return res.status(401).json({ error: 'Invalid or expired refresh token' });
+      }
+      // Remove the refresh token from Redis (token rotation)
+      await tokenManager.removeRefreshToken(userId);
       // Reconstruct a minimal payload for refresh
       const ipAddress = req.ip || req.connection?.remoteAddress || '';
       const sessionId = Math.floor(Math.random() * 1000000);
@@ -121,8 +127,10 @@ router.post('/logout', async (req, res) => {
     const bhoonidhiToken = req.headers['x-bhoonidhi-token'] as string;
 
     // Remove from our refresh tokens
-    if (refreshTokens.has(token)) {
-      refreshTokens.delete(token);
+    const userId = tokenManager.validateAccessToken(token);
+    if (userId) {
+      await tokenManager.removeBhoonidhiToken(userId);
+      await tokenManager.removeRefreshToken(userId);
     }
 
     // Logout from Bhoonidhi API if token is provided
@@ -131,14 +139,7 @@ router.post('/logout', async (req, res) => {
         await bhoonidhiClient.logout({ token: bhoonidhiToken });
       } catch (logoutError) {
         console.error('Bhoonidhi logout error:', logoutError);
-        // Don't fail the request if Bhoonidhi logout fails
       }
-    }
-
-    // Remove Bhoonidhi token from storage
-    const userId = tokenManager.validateAccessToken(token);
-    if (userId) {
-      tokenManager.removeBhoonidhiToken(userId);
     }
 
     return res.status(200).json({ message: 'Logged out successfully' });
