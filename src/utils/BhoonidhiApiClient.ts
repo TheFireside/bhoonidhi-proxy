@@ -1,12 +1,47 @@
 import axios, { AxiosInstance } from 'axios';
 import { AllCollections } from './types/bhoonidhiApiClient.types';
 
+export enum ProductType {
+  Standard = 'Standard'
+}
+
+export enum QueryType {
+  shape = 'shape'
+}
+
+export enum IsMX {
+  Yes = 'Yes',
+  No = 'No',
+}
+
+export interface SearchProductsBody {
+  userId: string;
+  prod: ProductType | string;
+  selSats: string;
+  offset: string;
+  sdate: string;
+  edate: string;
+  query: string;
+  queryType: QueryType | string;
+  isMX: IsMX | string;
+  loc?: string;
+  lat?: string;
+  lon?: string;
+  radius?: string;
+  tllat?: string;
+  tllon?: string;
+  brlat?: string;
+  brlon?: string;
+  shpCat?: string;
+  shapefilename?: string;
+  filters: string;
+  [key: string]: string | undefined;
+}
+
 export class BhoonidhiApiClient {
   private axiosInstance: AxiosInstance;
-  private baseURL: string;
 
   constructor(baseURL: string = 'https://bhoonidhi.nrsc.gov.in') {
-    this.baseURL = baseURL;
     this.axiosInstance = axios.create({
       baseURL,
       headers: {
@@ -31,7 +66,7 @@ export class BhoonidhiApiClient {
 
   private async post(
     url: string,
-    data: Record<string, string> | URLSearchParams,
+    data: Record<string, unknown> | URLSearchParams,
     {
       token,
       cookie,
@@ -143,7 +178,7 @@ export class BhoonidhiApiClient {
     );
   }
 
-  async searchProducts(body: Record<string, string>, token: string, cookie?: string) {
+  async searchProducts(body: SearchProductsBody, token: string, cookie?: string) {
     return this.post('/bhoonidhi/ProductSearch', body, { token, cookie });
   }
 
