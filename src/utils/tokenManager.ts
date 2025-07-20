@@ -1,9 +1,19 @@
 import jwt, { SignOptions } from 'jsonwebtoken';
+import { BhoonidhiLoginResponse } from './types/bhoonidhiApiClient.types';
+import { createClient } from 'redis';
+
+export interface TokenPayload {
+  sub: string;
+  UserID: string;
+  IPAddress: string;
+  SessionID: number;
+  expiresAtTime: string;
+}
 
 export class TokenManager {
   private accessSecret: string;
   private refreshSecret: string;
-  private bhoonidhiTokens: Map<string, string>;
+  private redisClient;
 
   constructor(accessSecret: string, refreshSecret: string) {
     if (!accessSecret || !refreshSecret) {
@@ -11,21 +21,24 @@ export class TokenManager {
     }
     this.accessSecret = accessSecret;
     this.refreshSecret = refreshSecret;
-    this.bhoonidhiTokens = new Map<string, string>();
+    this.redisClient = createClient({
+      url: process.env.REDIS_URL || '',
+    });
+    this.redisClient.connect().catch(console.error);
   }
 
-  generateAccessToken(userId: string, expiresIn?: SignOptions['expiresIn']): string {
-    return jwt.sign({ userId }, this.accessSecret, { expiresIn: expiresIn ?? '1h' });
+  generateAccessToken(payload: object, expiresIn?: SignOptions['expiresIn']): string {
+    return jwt.sign(payload, this.accessSecret, { expiresIn: expiresIn ?? '1h' });
   }
 
-  generateRefreshToken(userId: string, expiresIn?: SignOptions['expiresIn']): string {
-    return jwt.sign({ userId }, this.refreshSecret, { expiresIn: expiresIn ?? '7d' });
+  generateRefreshToken(payload: object, expiresIn?: SignOptions['expiresIn']): string {
+    return jwt.sign(payload, this.refreshSecret, { expiresIn: expiresIn ?? '7d' });
   }
 
   validateAccessToken(token: string): string | null {
     try {
-      const payload = jwt.verify(token, this.accessSecret) as { userId: string };
-      return payload.userId;
+      const payload = jwt.verify(token, this.accessSecret) as TokenPayload;
+      return payload.UserID;
     } catch {
       return null;
     }
@@ -33,24 +46,47 @@ export class TokenManager {
 
   validateRefreshToken(token: string): string | null {
     try {
-      const payload = jwt.verify(token, this.refreshSecret) as { userId: string };
-      return payload.userId;
+      const payload = jwt.verify(token, this.refreshSecret) as TokenPayload;
+      return payload.UserID;
     } catch {
       return null;
     }
   }
 
   // Bhoonidhi token management
-  storeBhoonidhiToken(userId: string, bhoonidhiToken: string): void {
-    this.bhoonidhiTokens.set(userId, bhoonidhiToken);
+  async storeBhoonidhiPayload(
+    userId: string,
+    payload: BhoonidhiLoginResponse,
+    ttlSeconds: number = 3600,
+  ): Promise<void> {
+    await this.redisClient.set(`bhoonidhi:token:${userId}`, JSON.stringify(payload), {
+      EX: ttlSeconds,
+    });
   }
 
-  getBhoonidhiToken(userId: string): string | undefined {
-    return this.bhoonidhiTokens.get(userId);
+  async getBhoonidhiPayload(userId: string): Promise<BhoonidhiLoginResponse | undefined> {
+    const data = await this.redisClient.get(`bhoonidhi:token:${userId}`);
+    return data ? (JSON.parse(data) as BhoonidhiLoginResponse) : undefined;
   }
 
-  removeBhoonidhiToken(userId: string): void {
-    this.bhoonidhiTokens.delete(userId);
+  async removeBhoonidhiToken(userId: string): Promise<void> {
+    await this.redisClient.del(`bhoonidhi:token:${userId}`);
+  }
+
+  async storeRefreshToken(
+    userId: string,
+    refreshToken: string,
+    ttlSeconds: number = 604800,
+  ): Promise<void> {
+    await this.redisClient.set(`bhoonidhi:refresh:${userId}`, refreshToken, { EX: ttlSeconds });
+  }
+
+  async getRefreshToken(userId: string): Promise<string | null> {
+    return await this.redisClient.get(`bhoonidhi:refresh:${userId}`);
+  }
+
+  async removeRefreshToken(userId: string): Promise<void> {
+    await this.redisClient.del(`bhoonidhi:refresh:${userId}`);
   }
 
   /**
