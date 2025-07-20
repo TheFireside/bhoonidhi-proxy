@@ -87,3 +87,15 @@ npm start
 - The API is under active development; expect breaking changes and incomplete features.
 
 MIT License
+
+# Redis Integration for Token Storage
+
+This project now uses Redis to store Bhoonidhi tokens for user sessions. You must have a running Redis server and provide its connection URL via the `REDIS_URL` environment variable. If not set, it defaults to `redis://localhost:6379`.
+
+## Example .env
+
+```
+REDIS_URL=redis://localhost:6379
+```
+
+Make sure your Redis server is running before starting the application.
