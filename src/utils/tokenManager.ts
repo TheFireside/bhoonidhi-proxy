@@ -1,5 +1,6 @@
 import jwt, { SignOptions } from 'jsonwebtoken';
 import { BhoonidhiLoginResponse } from './types/bhoonidhiApiClient.types';
+import { createClient } from 'redis';
 
 export interface TokenPayload {
   sub: string;
@@ -12,7 +13,7 @@ export interface TokenPayload {
 export class TokenManager {
   private accessSecret: string;
   private refreshSecret: string;
-  private bhoonidhiTokens: Map<string, BhoonidhiLoginResponse>;
+  private redisClient;
 
   constructor(accessSecret: string, refreshSecret: string) {
     if (!accessSecret || !refreshSecret) {
@@ -20,7 +21,10 @@ export class TokenManager {
     }
     this.accessSecret = accessSecret;
     this.refreshSecret = refreshSecret;
-    this.bhoonidhiTokens = new Map<string, BhoonidhiLoginResponse>();
+    this.redisClient = createClient({
+      url: process.env.REDIS_URL || '',
+    });
+    this.redisClient.connect().catch(console.error);
   }
 
   generateAccessToken(payload: object, expiresIn?: SignOptions['expiresIn']): string {
@@ -50,16 +54,31 @@ export class TokenManager {
   }
 
   // Bhoonidhi token management
-  storeBhoonidhiPayload(userId: string, payload: BhoonidhiLoginResponse): void {
-    this.bhoonidhiTokens.set(userId, payload);
+  async storeBhoonidhiPayload(userId: string, payload: BhoonidhiLoginResponse, ttlSeconds: number = 3600): Promise<void> {
+    await this.redisClient.set(`bhoonidhi:token:${userId}`, JSON.stringify(payload), {
+      EX: ttlSeconds,
+    });
   }
 
-  getBhoonidhiPayload(userId: string): BhoonidhiLoginResponse | undefined {
-    return this.bhoonidhiTokens.get(userId);
+  async getBhoonidhiPayload(userId: string): Promise<BhoonidhiLoginResponse | undefined> {
+    const data = await this.redisClient.get(`bhoonidhi:token:${userId}`);
+    return data ? (JSON.parse(data) as BhoonidhiLoginResponse) : undefined;
   }
 
-  removeBhoonidhiToken(userId: string): void {
-    this.bhoonidhiTokens.delete(userId);
+  async removeBhoonidhiToken(userId: string): Promise<void> {
+    await this.redisClient.del(`bhoonidhi:token:${userId}`);
+  }
+
+  async storeRefreshToken(userId: string, refreshToken: string, ttlSeconds: number = 604800): Promise<void> {
+    await this.redisClient.set(`bhoonidhi:refresh:${userId}`, refreshToken, { EX: ttlSeconds });
+  }
+
+  async getRefreshToken(userId: string): Promise<string | null> {
+    return await this.redisClient.get(`bhoonidhi:refresh:${userId}`);
+  }
+
+  async removeRefreshToken(userId: string): Promise<void> {
+    await this.redisClient.del(`bhoonidhi:refresh:${userId}`);
   }
 
   /**
