@@ -31,7 +31,8 @@ router.post('/token', async (req, res) => {
           const dataObj = loginResponse.Results[0] as BhoonidhiLoginResponse;
 
           const tokenExpiry = await tokenManager.getTokenExpiryMs(dataObj.JWT);
-          const ttlSeconds = typeof tokenExpiry === 'number' ? Math.floor(tokenExpiry / 1000) : 3600;
+          const ttlSeconds =
+            typeof tokenExpiry === 'number' ? Math.floor(tokenExpiry / 1000) : 3600;
           await tokenManager.storeBhoonidhiPayload(dataObj.USERID, dataObj, ttlSeconds);
 
           const sessionId = Math.floor(Math.random() * 1000000); // Simple random session ID
@@ -60,8 +61,8 @@ router.post('/token', async (req, res) => {
           return res.status(200).json({
             userId: dataObj.USERID,
             access_token: accessToken,
-            token_type: "Bearer",
-            expires_in: typeof tokenExpiry === "number" ? Math.floor(tokenExpiry / 1000) : 1200,
+            token_type: 'Bearer',
+            expires_in: typeof tokenExpiry === 'number' ? Math.floor(tokenExpiry / 1000) : 1200,
             refresh_token: refreshToken,
           });
         } else {

@@ -6,7 +6,7 @@ export class BhoonidhiApiClient {
   private baseURL: string;
 
   constructor(baseURL: string = 'https://bhoonidhi.nrsc.gov.in') {
-    this.baseURL=baseURL;
+    this.baseURL = baseURL;
     this.axiosInstance = axios.create({
       baseURL,
       headers: {

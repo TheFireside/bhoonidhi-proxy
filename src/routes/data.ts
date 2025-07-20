@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { BhoonidhiApiClient } from '../utils/BhoonidhiApiClient';
 import { AuthenticatedRequest, requireAuth } from '../utils/authMiddleware';
-import collectionsRoutes from './collections'
+import collectionsRoutes from './collections';
 
 const router = Router();
 

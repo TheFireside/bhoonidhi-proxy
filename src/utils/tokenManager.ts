@@ -54,7 +54,11 @@ export class TokenManager {
   }
 
   // Bhoonidhi token management
-  async storeBhoonidhiPayload(userId: string, payload: BhoonidhiLoginResponse, ttlSeconds: number = 3600): Promise<void> {
+  async storeBhoonidhiPayload(
+    userId: string,
+    payload: BhoonidhiLoginResponse,
+    ttlSeconds: number = 3600,
+  ): Promise<void> {
     await this.redisClient.set(`bhoonidhi:token:${userId}`, JSON.stringify(payload), {
       EX: ttlSeconds,
     });
@@ -69,7 +73,11 @@ export class TokenManager {
     await this.redisClient.del(`bhoonidhi:token:${userId}`);
   }
 
-  async storeRefreshToken(userId: string, refreshToken: string, ttlSeconds: number = 604800): Promise<void> {
+  async storeRefreshToken(
+    userId: string,
+    refreshToken: string,
+    ttlSeconds: number = 604800,
+  ): Promise<void> {
     await this.redisClient.set(`bhoonidhi:refresh:${userId}`, refreshToken, { EX: ttlSeconds });
   }
 

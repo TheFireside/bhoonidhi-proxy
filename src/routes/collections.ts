@@ -7,7 +7,7 @@ const router = Router();
 function minimalHash(str: string): string {
   let hash = 5381;
   for (let i = 0; i < str.length; i++) {
-    hash = ((hash << 5) + hash) + str.charCodeAt(i);
+    hash = (hash << 5) + hash + str.charCodeAt(i);
   }
   return Math.abs(hash).toString(36);
 }
@@ -15,7 +15,8 @@ function minimalHash(str: string): string {
 const bhoonidhiClient = new BhoonidhiApiClient();
 
 // In-memory cache for the collections hashmap
-let collectionsHashMap: Record<string, { id: string; satName: string; dispName: string }> | null = null;
+let collectionsHashMap: Record<string, { id: string; satName: string; dispName: string }> | null =
+  null;
 
 // Helper to build the hashmap from API
 async function buildCollectionsHashMap(userId: string, userEmail: string, token: string) {
@@ -26,12 +27,12 @@ async function buildCollectionsHashMap(userId: string, userEmail: string, token:
   });
   const map: Record<string, { id: string; satName: string; dispName: string }> = {};
   (collections.Results || []).forEach((col) => {
-    (col.sensors || []).forEach(sensor => {
+    (col.sensors || []).forEach((sensor) => {
       const id = minimalHash(`${col.satName || ''}:${sensor.dispName || ''}`);
       map[id] = {
         id,
         satName: col.satName,
-        dispName: sensor.dispName
+        dispName: sensor.dispName,
       };
     });
   });
@@ -61,4 +62,4 @@ router.get('/', async (req: AuthenticatedRequest, res) => {
   }
 });
 
-export default router; 
+export default router;

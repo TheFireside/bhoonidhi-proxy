@@ -11,7 +11,7 @@ export interface BhoonidhiLoginResponse {
   GE_NGE: string;
   USERCAT: string;
   CARTCOUNT: string;
-} 
+}
 
 interface CollectionSensor {
   res: string;
