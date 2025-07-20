@@ -18,7 +18,7 @@
     "schemas": {
       "AccessTokenRequest": {
         "type": "object",
-        "required": ["userId", "password"],
+        "required": ["userId", "password", "grant_type"],
         "properties": {
           "userId": {
             "type": "string",
