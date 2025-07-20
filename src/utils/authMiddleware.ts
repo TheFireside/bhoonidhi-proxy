@@ -6,7 +6,7 @@ export interface AuthenticatedRequest extends Request {
   bhoonidhiPayload?: BhoonidhiLoginResponse;
 }
 
-export function requireAuth(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+export async function requireAuth(req: AuthenticatedRequest, res: Response, next: NextFunction) {
   const authHeader = req.headers['authorization'];
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Missing or invalid Authorization header' });
@@ -16,7 +16,7 @@ export function requireAuth(req: AuthenticatedRequest, res: Response, next: Next
   if (!userId) {
     return res.status(401).json({ error: 'Invalid or expired access token' });
   }
-  const bhoonidhiPayload = tokenManager.getBhoonidhiPayload(userId);
+  const bhoonidhiPayload = await tokenManager.getBhoonidhiPayload(userId);
   req.bhoonidhiPayload = bhoonidhiPayload;
 
   next();
