@@ -1,5 +1,9 @@
 import axios, { AxiosInstance } from 'axios';
-import { AllCollections, SearchProductsBody } from './types/bhoonidhiApiClient.types';
+import {
+  AllCollections,
+  CollectionSensor,
+  SearchProductsBody,
+} from './types/bhoonidhiApiClient.types';
 
 export class BhoonidhiApiClient {
   private axiosInstance: AxiosInstance;
@@ -153,7 +157,7 @@ export class BhoonidhiApiClient {
     return this.post('/bhoonidhi/CartServlet', body, { token, cookie });
   }
 
-  async getAllCollectionNames({
+  async getAllCollections({
     userId,
     userEmail,
     token,
@@ -183,22 +187,131 @@ export class BhoonidhiApiClient {
     return this.post('/bhoonidhi/CartServlet', body, { token, cookie });
   }
 
+  async getProductMeta({
+    productID,
+    token,
+    cookie,
+    tableType = 'PMETA',
+  }: {
+    productID: string;
+    token: string;
+    cookie?: string;
+    tableType?: string;
+  }) {
+    return this.post(
+      '/bhoonidhi/GetProductMeta',
+      {
+        action: 'GETPRODMETA',
+        productID,
+        tableType,
+      },
+      { token, cookie },
+    );
+  }
+
   /**
    * Constructs the download path for a product zip file, matching the logic from the reference code.
-   * Only uses the required args.
+   * Applies the same path logic as the downloadProd function.
    * @param args - Object containing required parameters
    * @returns The download path as a string
    */
   getDownloadPath(args: {
     sat: string;
     sen: string;
-    year: string;
-    month: string;
+    imgPath: string;
     prdId: string;
+    sid: string;
     token: string;
   }): string {
-    // Only use the needed args
-    const { sat, sen, year, month, prdId, token } = args;
-    return `/bhoonidhi/data/${sat}/${sen}/${year}/${month}/${prdId}.zip?token=${token}&product_id=${prdId}`;
+    const { sat, sen, imgPath, prdId, sid, token } = args;
+    const prodPath = '/bhoonidhi/data/';
+    const serverURL = this.axiosInstance.defaults.baseURL;
+    const cartDate = new Date().toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+    }); // Format date as "23 July 2025"
+
+    let path = imgPath.toUpperCase();
+    let mon = '';
+
+    if (path.includes('NOEDA')) {
+      path = path.replace('//IMGARCHIVE/NOEDAJPG//', prodPath);
+      mon = prdId.split('_')[2]?.substr(2, 3) ?? '';
+    } else {
+      path = path.substring(0, imgPath.length - 3);
+      path = path.replace('/IMGARCHIVE/PRODUCTJPGS/', prodPath) + '/';
+    }
+
+    if (sen === 'OLI') {
+      path = path.replace('L8/OLI', 'L8/O');
+      path = path.replace('L9/OLI', 'L9/O');
+    }
+    if (sat === 'NVS') {
+      path = path.replace('NVS/', 'NV/');
+    }
+    if (sat === 'NPP') {
+      path = path.replace('NPP/VIR/', 'NPP/V/');
+    }
+    if (sat === 'JP1') {
+      path = path.replace('JP1/VIR/', 'JP1/V/');
+    }
+    if (sat === 'RS2') {
+      path = path.replace('RS2/LIS3/', 'RS2/3/');
+      path = path.replace('RS2/AWIF/', 'RS2/W/');
+      path = path.replace('RS2/LIS4/', 'RS2/F/');
+      path = path.replace('RS2/L4FMX/', 'RS2/F/');
+    }
+    if (sat === 'R2A') {
+      path = path.replace('R2A/LIS3/', 'R2A/3/');
+      path = path.replace('R2A/AWIF/', 'R2A/W/');
+      path = path.replace('R2A/LIS4/', 'R2A/F/');
+      path = path.replace('R2A/L4FMX/', 'R2A/F/');
+    }
+    if (prdId.startsWith('P5_PAN_CD')) {
+      if (prdId.includes('_30m')) {
+        path = '/bhoonidhi/data/CARTODEM/P5/PAN/30m/';
+      } else if (prdId.includes('_2.5m')) {
+        path = '/bhoonidhi/data/CARTODEM/P5/PAN/2.5m/';
+      } else if (prdId.includes('_10m')) {
+        path = '/bhoonidhi/data/CARTODEM/P5/PAN/10m/';
+      }
+    }
+
+    if (mon !== '') {
+      path = path + '/' + mon + '/';
+    }
+
+    let downURL = serverURL + path;
+    downURL = downURL + prdId + '.zip';
+    downURL = downURL + '?token=' + token;
+    downURL = downURL + '&product_id=' + prdId;
+    if (sat !== 'NVS' || sen !== 'A') {
+      downURL = downURL + ('&cartDate=' + cartDate + '&sid=' + sid);
+    }
+
+    return downURL;
+  }
+
+  public getAllCollectionsFromResponse(response: AllCollections): Array<string> {
+    if (!response?.Results) return [];
+    return response.Results.flatMap((item) =>
+      Array.isArray(item.sensors)
+        ? item.sensors.map((sensor: CollectionSensor) => sensor.dispName).filter((name) => !!name)
+        : [],
+    );
+  }
+
+  public getCollectionDetailsFromResponse(response: AllCollections, collectionID: string) {
+    if (!response?.Results) return null;
+    for (const item of response.Results) {
+      if (Array.isArray(item.sensors)) {
+        const found = item.sensors.find(
+          (sensor: CollectionSensor) => sensor.dispName === collectionID,
+        );
+        if (found) return found;
+      }
+    }
+    return null;
   }
 }

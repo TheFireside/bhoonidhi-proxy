@@ -13,7 +13,7 @@ export interface BhoonidhiLoginResponse {
   CARTCOUNT: string;
 }
 
-interface CollectionSensor {
+export interface CollectionSensor {
   res: string;
   func: string;
   endDate: string;
