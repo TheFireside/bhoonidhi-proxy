@@ -1,42 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
-import { AllCollections } from './types/bhoonidhiApiClient.types';
-
-export enum ProductType {
-  Standard = 'Standard'
-}
-
-export enum QueryType {
-  shape = 'shape'
-}
-
-export enum IsMX {
-  Yes = 'Yes',
-  No = 'No',
-}
-
-export interface SearchProductsBody {
-  userId: string;
-  prod: ProductType | string;
-  selSats: string;
-  offset: string;
-  sdate: string;
-  edate: string;
-  query: string;
-  queryType: QueryType | string;
-  isMX: IsMX | string;
-  loc?: string;
-  lat?: string;
-  lon?: string;
-  radius?: string;
-  tllat?: string;
-  tllon?: string;
-  brlat?: string;
-  brlon?: string;
-  shpCat?: string;
-  shapefilename?: string;
-  filters: string;
-  [key: string]: string | undefined;
-}
+import { AllCollections, SearchProductsBody } from './types/bhoonidhiApiClient.types';
 
 export class BhoonidhiApiClient {
   private axiosInstance: AxiosInstance;
