@@ -1,5 +1,6 @@
 import { Router, Request } from 'express';
 import { BhoonidhiApiClient } from '../utils/BhoonidhiApiClient';
+import { SearchProductsBody } from '../utils/types/bhoonidhiApiClient.types';
 
 const router = Router();
 
@@ -28,10 +29,22 @@ router.get('/', async (req: BhoonidhiRequest, res) => {
     // Use Bhoonidhi API for download functionality
     // Note: The actual download endpoint might be different based on Bhoonidhi API
     // This is a placeholder implementation
-    const downloadBody = {
-      action: 'DOWNLOAD',
-      productId: id as string,
-      collection: collection as string,
+    const downloadBody: SearchProductsBody = {
+      userId: req.userId || '',
+      prod: 'Standard',
+      selSats: collection as string,
+      offset: '0',
+      sdate: '',
+      edate: '',
+      query: '',
+      queryType: '',
+      isMX: 'No',
+      shpCat: '',
+      shapefilename: '',
+      filters: '{}',
+      // Add any other required fields from SearchProductsBody here
+      productId: id as string, // If SearchProductsBody actually expects this field
+      action: 'DOWNLOAD', // If SearchProductsBody actually expects this field
     };
 
     try {
