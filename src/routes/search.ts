@@ -41,4 +41,4 @@ router.post('/search', requireAuth, async (req: AuthenticatedRequest, res) => {
   }
 });
 
-export default router; 
+export default router;
