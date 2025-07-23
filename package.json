@@ -23,11 +23,11 @@
     "serverless-http": "^3.2.0"
   },
   "lint-staged": {
-    "src/*.{js,ts,tsx}": [
+    "src/**/*.{js,ts,tsx}": [
       "eslint --fix",
       "prettier --write"
     ],
-    "src/*.{json,md,css,scss}": [
+    "src/**/*.{json,md,css,scss}": [
       "prettier --write"
     ]
   },

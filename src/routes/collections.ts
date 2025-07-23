@@ -1,51 +1,11 @@
 import { Router } from 'express';
 import { BhoonidhiApiClient } from '../utils/BhoonidhiApiClient';
 import { AuthenticatedRequest } from '../utils/authMiddleware';
+import { SearchProductsBody } from '../utils/types/bhoonidhiApiClient.types';
 
 const router = Router();
 
-function minimalHash(str: string): string {
-  let hash = 5381;
-  for (let i = 0; i < str.length; i++) {
-    hash = (hash << 5) + hash + str.charCodeAt(i);
-  }
-  return Math.abs(hash).toString(36);
-}
-
 const bhoonidhiClient = new BhoonidhiApiClient();
-
-// In-memory cache for the collections hashmap
-let collectionsHashMap: Record<string, { id: string; satName: string; dispName: string }> | null =
-  null;
-
-// Helper to build the hashmap from API
-async function buildCollectionsHashMap(userId: string, userEmail: string, token: string) {
-  const collections = await bhoonidhiClient.getAllCollectionNames({
-    userId,
-    userEmail,
-    token,
-  });
-  const map: Record<string, { id: string; satName: string; dispName: string }> = {};
-  (collections.Results || []).forEach((col) => {
-    (col.sensors || []).forEach((sensor) => {
-      const id = minimalHash(`${col.satName || ''}:${sensor.dispName || ''}`);
-      map[id] = {
-        id,
-        satName: col.satName,
-        dispName: sensor.dispName,
-      };
-    });
-  });
-  return map;
-}
-
-// Expose a function to get the hashmap, refreshing if needed
-async function getCollectionsHashMap(userId: string, userEmail: string, token: string) {
-  if (!collectionsHashMap || Object.keys(collectionsHashMap).length === 0) {
-    collectionsHashMap = await buildCollectionsHashMap(userId, userEmail, token);
-  }
-  return collectionsHashMap;
-}
 
 router.get('/', async (req: AuthenticatedRequest, res) => {
   try {
@@ -53,11 +13,84 @@ router.get('/', async (req: AuthenticatedRequest, res) => {
     const bhoonidhiToken = req.bhoonidhiPayload?.JWT || '';
     const userEmail = req.bhoonidhiPayload?.USEREMAIL || '';
 
-    const map = await getCollectionsHashMap(userId, userEmail, bhoonidhiToken);
-    // Return as array
-    res.status(200).json(Object.values(map));
+    const response = await bhoonidhiClient.getAllCollections({
+      userId,
+      userEmail,
+      token: bhoonidhiToken,
+    });
+
+    const collections = await bhoonidhiClient.getAllCollectionsFromResponse(response);
+
+    res.status(200).json(collections);
   } catch (err) {
     console.error('Error fetching collections:', err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+router.get('/:collectionID', async (req: AuthenticatedRequest, res) => {
+  try {
+    const collectionID = req.params.collectionID;
+    const bhoonidhiToken = req.bhoonidhiPayload?.JWT || '';
+    const userId = req.bhoonidhiPayload?.USERID || '';
+    const userEmail = req.bhoonidhiPayload?.USEREMAIL || '';
+    const response = await bhoonidhiClient.getAllCollections({
+      userId,
+      userEmail,
+      token: bhoonidhiToken,
+    });
+    const collection = bhoonidhiClient.getCollectionDetailsFromResponse(response, collectionID);
+    res.status(200).json(collection);
+  } catch (err) {
+    console.error('Error fetching collection details:', err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+router.get('/:collectionID/items', async (req: AuthenticatedRequest, res) => {
+  try {
+    const collectionID = req.params.collectionID;
+    const bhoonidhiToken = req.bhoonidhiPayload?.JWT || '';
+
+    const searchProductsBody: SearchProductsBody = {
+      userId: req.bhoonidhiPayload?.USERID || '',
+      prod: 'Standard',
+      selSats: collectionID,
+      offset: '0',
+      sdate: 'JUN%2F23%2F2025',
+      edate: 'JUL%2F23%2F2025',
+      query: 'area',
+      queryType: 'shape',
+      isMX: 'No',
+      shpCat: 'existingShp',
+      shapefilename: 'INDIA.zip',
+      filters: '%7B%7D',
+    };
+
+    const response = await bhoonidhiClient.searchProducts(searchProductsBody, bhoonidhiToken);
+
+    res.status(200).json(response.Results);
+  } catch (err) {
+    console.error('Error fetching collection items:', err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+router.get('/:collectionID/items/:itemID', async (req: AuthenticatedRequest, res) => {
+  try {
+    // const collectionID = req.params.collectionID;
+    const itemID = req.params.itemID;
+    const bhoonidhiToken = req.bhoonidhiPayload?.JWT || '';
+
+    const response = await bhoonidhiClient.getProductMeta({
+      productID: itemID,
+      token: bhoonidhiToken,
+      cookie: req.cookies?.bhoonidhiCookie,
+    });
+
+    res.status(200).json(response);
+  } catch (err) {
+    console.error('Error fetching collection item details:', err);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });

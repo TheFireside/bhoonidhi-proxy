@@ -1,56 +1,47 @@
-import { Router, Request } from 'express';
+import { Router } from 'express';
 import { BhoonidhiApiClient } from '../utils/BhoonidhiApiClient';
+import { AuthenticatedRequest } from '../utils/authMiddleware';
 
 const router = Router();
-
-interface BhoonidhiRequest extends Request {
-  userId?: string;
-  bhoonidhiToken?: string;
-  userEmail?: string;
-}
 
 // Create Bhoonidhi API client instance
 const bhoonidhiClient = new BhoonidhiApiClient();
 
-router.get('/', async (req: BhoonidhiRequest, res) => {
+router.get('/', async (req: AuthenticatedRequest, res) => {
   try {
-    const { id, collection } = req.query;
-    const bhoonidhiToken = req.bhoonidhiToken;
+    // const { id, collection } = req.query;
+    const bhoonidhiToken = req.bhoonidhiPayload?.JWT;
 
     if (!bhoonidhiToken) {
       return res.status(401).json({ error: 'Bhoonidhi token not found' });
     }
 
-    if (!id || !collection) {
-      return res.status(400).json({ error: 'Missing id or collection parameter' });
-    }
+    // if (!id || !collection) {
+    //   return res.status(400).json({ error: 'Missing id or collection parameter' });
+    // }
 
-    // Use Bhoonidhi API for download functionality
-    // Note: The actual download endpoint might be different based on Bhoonidhi API
-    // This is a placeholder implementation
-    const downloadBody = {
-      action: 'DOWNLOAD',
-      productId: id as string,
-      collection: collection as string,
-    };
+    const today = new Date();
+    const options: Intl.DateTimeFormatOptions = { day: '2-digit', month: 'long', year: 'numeric' };
+    const cartDate = today.toLocaleDateString('en-GB', options).replace(/ /g, '%20');
+    const cartItems = await bhoonidhiClient.viewCart(
+      {
+        userId: req.bhoonidhiPayload?.USERID || '',
+        cartDate,
+      },
+      bhoonidhiToken,
+      req.cookies?.bhoonidhiCookie,
+    );
 
-    try {
-      const downloadResponse = await bhoonidhiClient.searchProducts(downloadBody, bhoonidhiToken);
+    const downloadPath = bhoonidhiClient.getDownloadPath({
+      sat: cartItems.Results[0].SATELLITE,
+      sen: cartItems.Results[0].SENSOR,
+      imgPath: cartItems.Results[0].DIRPATH,
+      prdId: cartItems.Results[0].PRODUCTID,
+      sid: cartItems.Results[0].srt,
+      token: bhoonidhiToken,
+    });
 
-      return res.status(200).json({
-        download_url:
-          downloadResponse.downloadUrl ||
-          `https://bhoonidhi.nrsc.gov.in/download/${collection}/${id}`,
-        download_info: downloadResponse,
-      });
-    } catch (downloadError) {
-      console.error('Download error:', downloadError);
-      // Fallback to a generic download URL
-      return res.status(200).json({
-        download_url: `https://bhoonidhi.nrsc.gov.in/download/${collection}/${id}`,
-        note: 'Using fallback download URL',
-      });
-    }
+    return res.status(200).json(downloadPath);
   } catch (err) {
     console.error('Download route error:', err);
     return res.status(500).json({ error: 'Internal Server Error' });

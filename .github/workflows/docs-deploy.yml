@@ -2,9 +2,11 @@ name: Deploy Docs to GitHub Pages
 
 on:
   push:
+    branches:
+      - main
     paths:
       - 'docs/apiDoc.json'
-    workflow_dispatch:
+  workflow_dispatch:
 
 permissions:
   contents: read

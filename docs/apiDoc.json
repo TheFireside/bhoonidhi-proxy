@@ -18,7 +18,7 @@
     "schemas": {
       "AccessTokenRequest": {
         "type": "object",
-        "required": ["userId", "password"],
+        "required": ["userId", "password", "grant_type"],
         "properties": {
           "userId": {
             "type": "string",
@@ -30,6 +30,11 @@
             "description": "The user's password.",
             "format": "password",
             "example": "password@123"
+          },
+          "grant_type": {
+            "type": "string",
+            "description": "Must be set to 'refresh_token'.",
+            "enum": ["password"]
           }
         }
       },
@@ -88,13 +93,16 @@
         "properties": {
           "ErrorCode": {
             "type": "string",
-            "description": "The error code identifying the issue."           },
+            "description": "The error code identifying the issue."
+          },
           "Description": {
             "type": "string",
-            "description": "A human-readable description of the error."           },
+            "description": "A human-readable description of the error."
+          },
           "Action": {
             "type": "string",
-            "description": "Suggested action to resolve the error."           }
+            "description": "Suggested action to resolve the error."
+          }
         }
       },
       "GeoJSONGeometry": {
@@ -103,7 +111,14 @@
         "properties": {
           "type": {
             "type": "string",
-            "enum": ["Point", "MultiPoint", "LineString", "MultiLineString", "Polygon", "MultiPolygon"]
+            "enum": [
+              "Point",
+              "MultiPoint",
+              "LineString",
+              "MultiLineString",
+              "Polygon",
+              "MultiPolygon"
+            ]
           },
           "coordinates": {
             "type": "array",
@@ -129,7 +144,8 @@
         "properties": {
           "op": {
             "type": "string",
-            "description": "The logical operator for the filter (e.g., 'and', 'eq')."           },
+            "description": "The logical operator for the filter (e.g., 'and', 'eq')."
+          },
           "args": {
             "type": "array",
             "items": {
@@ -140,8 +156,24 @@
         "example": {
           "op": "and",
           "args": [
-            { "op": "eq", "args": [{ "property": "Polarization" }, "DH"] },
-            { "op": "eq", "args": [{ "property": "Look_Direction" }, "RIGHT"] }
+            {
+              "op": "eq",
+              "args": [
+                {
+                  "property": "Polarization"
+                },
+                "DH"
+              ]
+            },
+            {
+              "op": "eq",
+              "args": [
+                {
+                  "property": "Look_Direction"
+                },
+                "RIGHT"
+              ]
+            }
           ]
         }
       },
@@ -193,15 +225,22 @@
             "items": {
               "type": "string"
             },
-            "example": ["E04_SAR_MRS_28DEC2023_362001201630_10311_STUCO0ZTD_13022_22_DH_D_R_N06308_E084544"]
+            "example": [
+              "E04_SAR_MRS_28DEC2023_362001201630_10311_STUCO0ZTD_13022_22_DH_D_R_N06308_E084544"
+            ]
           },
           "sortby": {
             "type": "array",
             "items": {
               "type": "object",
               "properties": {
-                "field": { "type": "string" },
-                "direction": { "type": "string", "enum": ["asc", "desc"] }
+                "field": {
+                  "type": "string"
+                },
+                "direction": {
+                  "type": "string",
+                  "enum": ["asc", "desc"]
+                }
               }
             }
           }
@@ -220,10 +259,12 @@
             "properties": {
               "returned": {
                 "type": "integer",
-                "description": "Number of items returned in the response."               },
+                "description": "Number of items returned in the response."
+              },
               "limit": {
                 "type": "integer",
-                "description": "The maximum number of items requested."               }
+                "description": "The maximum number of items requested."
+              }
             }
           },
           "features": {
@@ -246,12 +287,14 @@
         "type": "http",
         "scheme": "bearer",
         "bearerFormat": "JWT",
-        "description": "A JWT access token is required to be sent in the 'Authorization' header as a Bearer token."       },
+        "description": "A JWT access token is required to be sent in the 'Authorization' header as a Bearer token."
+      },
       "refreshTokenAuth": {
         "type": "http",
         "scheme": "bearer",
         "bearerFormat": "JWT",
-        "description": "A JWT refresh token is required to be sent in the 'Authorization' header as a Bearer token for logout."       }
+        "description": "A JWT refresh token is required to be sent in the 'Authorization' header as a Bearer token for logout."
+      }
     }
   },
   "paths": {
@@ -267,8 +310,12 @@
             "application/json": {
               "schema": {
                 "oneOf": [
-                  { "$ref": "#/components/schemas/AccessTokenRequest" },
-                  { "$ref": "#/components/schemas/RefreshTokenRequest" }
+                  {
+                    "$ref": "#/components/schemas/AccessTokenRequest"
+                  },
+                  {
+                    "$ref": "#/components/schemas/RefreshTokenRequest"
+                  }
                 ]
               }
             }
@@ -283,16 +330,28 @@
                   "$ref": "#/components/schemas/TokenResponse"
                 },
                 "examples": {
-                  "AccessTokenResponse": { "$ref": "#/components/schemas/TokenResponse/properties/access_token/example" },
-                  "RefreshTokenResponse": { "$ref": "#/components/schemas/TokenResponse/properties/access_token/example" }
+                  "AccessTokenResponse": {
+                    "$ref": "#/components/schemas/TokenResponse/properties/access_token/example"
+                  },
+                  "RefreshTokenResponse": {
+                    "$ref": "#/components/schemas/TokenResponse/properties/access_token/example"
+                  }
                 }
               }
             }
           },
-          "400": { "description": "Bad Request. Incorrect keys in the request. " },
-          "401": { "description": "Unauthorized. Incorrect password. " },
-          "403": { "description": "Forbidden. Maximum active sessions reached. " },
-          "500": { "description": "Internal Server Error."  }
+          "400": {
+            "description": "Bad Request. Incorrect keys in the request. "
+          },
+          "401": {
+            "description": "Unauthorized. Incorrect password. "
+          },
+          "403": {
+            "description": "Forbidden. Maximum active sessions reached. "
+          },
+          "500": {
+            "description": "Internal Server Error."
+          }
         }
       }
     },
@@ -301,10 +360,18 @@
         "summary": "Logout User Session",
         "description": "Securely terminates the user's session and revokes the refresh token.",
         "tags": ["Authentication"],
-        "security": [{ "refreshTokenAuth": [] }],
+        "security": [
+          {
+            "refreshTokenAuth": []
+          }
+        ],
         "responses": {
-          "204": { "description": "Logout successful. Session terminated." },
-          "401": { "description": "Unauthorized. Invalid refresh token." }
+          "204": {
+            "description": "Logout successful. Session terminated."
+          },
+          "401": {
+            "description": "Unauthorized. Invalid refresh token."
+          }
         }
       }
     },
@@ -313,7 +380,11 @@
         "summary": "Get All Collections",
         "description": "Retrieves a list of all available data collections from the STAC catalogue.",
         "tags": ["Collection"],
-        "security": [{ "bearerAuth": [] }],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "responses": {
           "200": {
             "description": "A successful response returning a list of available collections.",
@@ -354,20 +425,32 @@
         "summary": "Get Collection Details",
         "description": "Retrieves the details for a specific collection.",
         "tags": ["Collection"],
-        "security": [{ "bearerAuth": [] }],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "in": "path",
             "name": "collection_id",
             "required": true,
-            "schema": { "type": "string" },
+            "schema": {
+              "type": "string"
+            },
             "description": "The ID of the collection."
           }
         ],
         "responses": {
-          "200": { "description": "Successful retrieval of collection details." },
-          "401": { "description": "Unauthorized." },
-          "404": { "description": "Collection not found." }
+          "200": {
+            "description": "Successful retrieval of collection details."
+          },
+          "401": {
+            "description": "Unauthorized."
+          },
+          "404": {
+            "description": "Collection not found."
+          }
         }
       }
     },
@@ -376,27 +459,39 @@
         "summary": "Get All Items in a Collection",
         "description": "Retrieves all items within a specific collection.",
         "tags": ["Collection"],
-        "security": [{ "bearerAuth": [] }],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "in": "path",
             "name": "collection_id",
             "required": true,
-            "schema": { "type": "string" },
+            "schema": {
+              "type": "string"
+            },
             "description": "The ID of the collection."
           }
         ],
         "responses": {
-          "200": { 
+          "200": {
             "description": "Successful retrieval of items.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/SearchResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResponse"
+                }
               }
             }
           },
-          "401": { "description": "Unauthorized." },
-          "404": { "description": "Collection not found." }
+          "401": {
+            "description": "Unauthorized."
+          },
+          "404": {
+            "description": "Collection not found."
+          }
         }
       }
     },
@@ -405,27 +500,41 @@
         "summary": "Get Details of an Item",
         "description": "Retrieves the details of a specific item within a collection.",
         "tags": ["Collection"],
-        "security": [{ "bearerAuth": [] }],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "in": "path",
             "name": "collection_id",
             "required": true,
-            "schema": { "type": "string" },
+            "schema": {
+              "type": "string"
+            },
             "description": "The ID of the collection."
           },
           {
             "in": "path",
             "name": "item_id",
             "required": true,
-            "schema": { "type": "string" },
+            "schema": {
+              "type": "string"
+            },
             "description": "The ID of the item."
           }
         ],
         "responses": {
-          "200": { "description": "Successful retrieval of item details." },
-          "401": { "description": "Unauthorized." },
-          "404": { "description": "Item or Collection not found." }
+          "200": {
+            "description": "Successful retrieval of item details."
+          },
+          "401": {
+            "description": "Unauthorized."
+          },
+          "404": {
+            "description": "Item or Collection not found."
+          }
         }
       }
     },
@@ -434,12 +543,18 @@
         "summary": "Search for STAC Items",
         "description": "Search for satellite data products from the Bhoonidhi STAC catalogue using a JSON request body.",
         "tags": ["Data Search"],
-        "security": [{ "bearerAuth": [] }],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/SearchRequest" }
+              "schema": {
+                "$ref": "#/components/schemas/SearchRequest"
+              }
             }
           }
         },
@@ -448,36 +563,75 @@
             "description": "Search successful.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/SearchResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResponse"
+                }
               }
             }
           },
-          "401": { "description": "Unauthorized. Invalid or expired session. " },
-          "500": { "description": "Internal Server Error. " },
-          "503": { "description": "Service Unavailable. STAC connection failed. " }
+          "401": {
+            "description": "Unauthorized. Invalid or expired session. "
+          },
+          "500": {
+            "description": "Internal Server Error. "
+          },
+          "503": {
+            "description": "Service Unavailable. STAC connection failed. "
+          }
         }
       },
       "get": {
         "summary": "Search for STAC Items (GET)",
         "description": "Search for satellite data products using query parameters.",
         "tags": ["Data Search"],
-        "security": [{ "bearerAuth": [] }],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
-          { "in": "query", "name": "datetime", "schema": { "type": "string" }, "description": "RFC 3339 date range."  },
-          { "in": "query", "name": "bbox", "schema": { "type": "string" }, "description": "Bounding box."  },
-          { "in": "query", "name": "limit", "schema": { "type": "integer" }, "description": "Number of results to return."  }
+          {
+            "in": "query",
+            "name": "datetime",
+            "schema": {
+              "type": "string"
+            },
+            "description": "RFC 3339 date range."
+          },
+          {
+            "in": "query",
+            "name": "bbox",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Bounding box."
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Number of results to return."
+          }
         ],
         "responses": {
           "200": {
             "description": "Search successful.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/SearchResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResponse"
+                }
               }
             }
           },
-          "401": { "description": "Unauthorized. Invalid or expired session."  },
-          "500": { "description": "Internal Server Error."  }
+          "401": {
+            "description": "Unauthorized. Invalid or expired session."
+          },
+          "500": {
+            "description": "Internal Server Error."
+          }
         }
       }
     },
@@ -486,25 +640,58 @@
         "summary": "Download Data Product",
         "description": "Downloads a specific data product using its item ID and collection name. Note: Only download products with the property 'Online' = 'Y'. ",
         "tags": ["Data Download"],
-        "security": [{ "bearerAuth": [] }],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
-          { "in": "query", "name": "id", "required": true, "schema": { "type": "string" }, "description": "The ID of the item to download."  },
-          { "in": "query", "name": "collection", "required": true, "schema": { "type": "string" }, "description": "The collection ID of the item."  }
+          {
+            "in": "query",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The ID of the item to download."
+          },
+          {
+            "in": "query",
+            "name": "collection",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The collection ID of the item."
+          }
         ],
         "responses": {
           "200": {
             "description": "Product download initiated. The response body contains the product file.",
             "content": {
               "application/octet-stream": {
-                "schema": { "type": "string", "format": "binary" }
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
               }
             }
           },
-          "401": { "description": "Unauthorized. Invalid or expired session. " },
-          "404": { "description": "Product not found on online storage. " },
-          "412": { "description": "Precondition Failed. Concurrent download limit exceeded (5 per user)." },
-          "500": { "description": "Internal Server Error. " },
-          "504": { "description": "Gateway Timeout. Download interrupted. " }
+          "401": {
+            "description": "Unauthorized. Invalid or expired session. "
+          },
+          "404": {
+            "description": "Product not found on online storage. "
+          },
+          "412": {
+            "description": "Precondition Failed. Concurrent download limit exceeded (5 per user)."
+          },
+          "500": {
+            "description": "Internal Server Error. "
+          },
+          "504": {
+            "description": "Gateway Timeout. Download interrupted. "
+          }
         }
       }
     }
