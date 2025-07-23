@@ -76,4 +76,23 @@ router.get('/:collectionID/items', async (req: AuthenticatedRequest, res) => {
   }
 });
 
+router.get('/:collectionID/items/:itemID', async (req: AuthenticatedRequest, res) => {
+  try {
+    // const collectionID = req.params.collectionID;
+    const itemID = req.params.itemID;
+    const bhoonidhiToken = req.bhoonidhiPayload?.JWT || '';
+
+    const response = await bhoonidhiClient.getProductMeta({
+      productID: itemID,
+      token: bhoonidhiToken,
+      cookie: req.cookies?.bhoonidhiCookie,
+    });
+
+    res.status(200).json(response);
+  } catch (err) {
+    console.error('Error fetching collection item details:', err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
 export default router;
