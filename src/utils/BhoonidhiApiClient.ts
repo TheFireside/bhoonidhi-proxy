@@ -1,6 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 import {
   AllCollections,
+  CartItems,
   CollectionSensor,
   SearchProductsBody,
 } from './types/bhoonidhiApiClient.types';
@@ -149,6 +150,21 @@ export class BhoonidhiApiClient {
     return this.post('/bhoonidhi/ProductSearch', body, { token, cookie });
   }
 
+  async viewCart(
+    body: { userId: string; cartDate: string; action?: string },
+    token: string,
+    cookie?: string,
+  ): Promise<CartItems> {
+    return this.post(
+      '/bhoonidhi/CartServlet',
+      {
+        ...body,
+        action: body.action ?? 'VIEWCART',
+      },
+      { token, cookie },
+    );
+  }
+
   async addToCart(body: Record<string, string>, token: string, cookie?: string) {
     return this.post('/bhoonidhi/OpenOrderCart', body, { token, cookie });
   }
@@ -226,12 +242,8 @@ export class BhoonidhiApiClient {
     const { sat, sen, imgPath, prdId, sid, token } = args;
     const prodPath = '/bhoonidhi/data/';
     const serverURL = this.axiosInstance.defaults.baseURL;
-    const cartDate = new Date().toLocaleDateString('en-GB', {
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric',
-    }); // Format date as "23 July 2025"
-
+    const options: Intl.DateTimeFormatOptions = { day: '2-digit', month: 'long', year: 'numeric' };
+    const cartDate = new Date().toLocaleDateString('en-GB', options).replace(/ /g, '%20');
     let path = imgPath.toUpperCase();
     let mon = '';
 
