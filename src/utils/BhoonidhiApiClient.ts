@@ -3,6 +3,7 @@ import {
   AllCollections,
   CartItems,
   CollectionSensor,
+  ProductMeta,
   SearchProductsBody,
 } from './types/bhoonidhiApiClient.types';
 
@@ -213,7 +214,7 @@ export class BhoonidhiApiClient {
     token: string;
     cookie?: string;
     tableType?: string;
-  }) {
+  }): Promise<ProductMeta> {
     return this.post(
       '/bhoonidhi/GetProductMeta',
       {
@@ -236,7 +237,7 @@ export class BhoonidhiApiClient {
     sen: string;
     imgPath: string;
     prdId: string;
-    sid: string;
+    sid?: string;
     token: string;
   }): string {
     const { sat, sen, imgPath, prdId, sid, token } = args;
@@ -298,7 +299,7 @@ export class BhoonidhiApiClient {
     downURL = downURL + prdId + '.zip';
     downURL = downURL + '?token=' + token;
     downURL = downURL + '&product_id=' + prdId;
-    if (sat !== 'NVS' || sen !== 'A') {
+    if (sid && (sat !== 'NVS' || sen !== 'A')) {
       downURL = downURL + ('&cartDate=' + cartDate + '&sid=' + sid);
     }
 
