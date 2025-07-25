@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { tokenManager } from '../utils/tokenManager';
+import jwt from 'jsonwebtoken';
 import { BhoonidhiApiClient } from '../utils/BhoonidhiApiClient';
 import { BhoonidhiLoginResponse } from '../utils/types/bhoonidhiApiClient.types';
 
@@ -29,41 +30,36 @@ router.post('/token', async (req, res) => {
           loginResponse.Results[0].JWT
         ) {
           const dataObj = loginResponse.Results[0] as BhoonidhiLoginResponse;
+          const bhoonidhiTokenPayload = jwt.decode(dataObj.JWT);
 
-          const tokenExpiry = await tokenManager.getTokenExpiryMs(dataObj.JWT);
-          const ttlSeconds =
-            typeof tokenExpiry === 'number' ? Math.floor(tokenExpiry / 1000) : 3600;
+          if (!bhoonidhiTokenPayload || typeof bhoonidhiTokenPayload !== 'object') {
+            return res.status(401).json({ error: 'Invalid Bhoonidhi token' });
+          }
+
+          const tokenExpiry = bhoonidhiTokenPayload.expiresAtTime;
+          const ttlSeconds = new Date(tokenExpiry).getTime() / 1000 - Math.floor(Date.now() / 1000);
           await tokenManager.storeBhoonidhiPayload(dataObj.USERID, dataObj, ttlSeconds);
 
-          const sessionId = Math.floor(Math.random() * 1000000); // Simple random session ID
           const ipAddress = req.ip || req.connection?.remoteAddress || '';
-          let expiresAt;
-          if (typeof tokenExpiry === 'number') {
-            expiresAt = new Date(Date.now() + tokenExpiry);
-          } else {
-            expiresAt = new Date(Date.now() + 60 * 60 * 1000); // fallback 1 hour
-          }
-          const pad = (n: number) => n.toString().padStart(2, '0');
-          const expiresAtTime = `${expiresAt.getFullYear()}-${pad(expiresAt.getMonth() + 1)}-${pad(expiresAt.getDate())} ${pad(expiresAt.getHours())}:${pad(expiresAt.getMinutes())}:${pad(expiresAt.getSeconds())}`;
 
           const tokenPayload = {
             sub: 'Auth',
             UserID: dataObj.USERID,
             IPAddress: ipAddress,
-            SessionID: sessionId,
-            expiresAtTime,
+            SessionID: bhoonidhiTokenPayload.SessionID,
+            expiresAtTime: bhoonidhiTokenPayload.expiresAtTime,
           };
 
           const accessToken = tokenManager.generateAccessToken(tokenPayload);
-          const refreshToken = tokenManager.generateRefreshToken(tokenPayload);
-          await tokenManager.storeRefreshToken(dataObj.USERID, refreshToken, 604800);
+          // const refreshToken = tokenManager.generateRefreshToken(tokenPayload);
+          // await tokenManager.storeRefreshToken(dataObj.USERID, refreshToken, 604800);
 
           return res.status(200).json({
             userId: dataObj.USERID,
             access_token: accessToken,
             token_type: 'Bearer',
-            expires_in: typeof tokenExpiry === 'number' ? Math.floor(tokenExpiry / 1000) : 1200,
-            refresh_token: refreshToken,
+            expires_in: ttlSeconds,
+            refresh_token: 'not_implemented',
           });
         } else {
           return res.status(401).json({ error: 'Invalid credentials' });

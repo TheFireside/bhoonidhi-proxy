@@ -88,30 +88,6 @@ export class TokenManager {
   async removeRefreshToken(userId: string): Promise<void> {
     await this.redisClient.del(`bhoonidhi:refresh:${userId}`);
   }
-
-  /**
-   * Returns the number of milliseconds until the token expires, based on its "exp" claim.
-   * If the token is expired, returns 0. If no exp claim, returns undefined.
-   * @param token JWT token string
-   */
-  getTokenExpiryMs(token: string): number | undefined {
-    try {
-      const decoded = jwt.decode(token) as { expiresAtTime?: string } | null;
-      if (!decoded || typeof decoded.expiresAtTime !== 'string') {
-        return undefined;
-      }
-      const isoString = decoded.expiresAtTime.replace(' ', 'T') + 'Z';
-      const expiryDate = new Date(isoString);
-      if (isNaN(expiryDate.getTime())) {
-        return undefined;
-      }
-      const now = Date.now();
-      const msLeft = expiryDate.getTime() - now;
-      return msLeft > 0 ? msLeft : 0;
-    } catch {
-      return undefined;
-    }
-  }
 }
 
 export const tokenManager = new TokenManager(
