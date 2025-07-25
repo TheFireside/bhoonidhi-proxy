@@ -59,11 +59,9 @@ router.get('/:collectionID/items', async (req: AuthenticatedRequest, res) => {
       offset: '0',
       sdate: 'JUN%2F23%2F2025',
       edate: 'JUL%2F23%2F2025',
-      query: 'area',
-      queryType: 'shape',
+      query: 'date',
+      queryType: 'date',
       isMX: 'No',
-      shpCat: 'existingShp',
-      shapefilename: 'INDIA.zip',
       filters: '%7B%7D',
     };
 

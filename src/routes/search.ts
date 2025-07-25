@@ -26,7 +26,7 @@ function buildSearchBodyFromRequest(req: AuthenticatedRequest) {
   };
 }
 
-router.post('/search', requireAuth, async (req: AuthenticatedRequest, res) => {
+router.post('/', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const bhoonidhiToken = req.bhoonidhiPayload?.JWT;
     if (!bhoonidhiToken) {

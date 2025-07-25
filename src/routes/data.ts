@@ -6,6 +6,6 @@ const router = Router();
 
 router.use('/collections', collectionsRoutes);
 
-router.use('/', searchRoutes);
+router.use('/search', searchRoutes);
 
 export default router;
