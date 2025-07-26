@@ -3,7 +3,7 @@ import { BhoonidhiApiServices } from '../services/bhoonidhiApiService';
 import { AuthenticatedRequest, requireAuth } from '../utils/authMiddleware';
 
 const router = Router();
-const bhoonidhiService = new BhoonidhiApiServices();
+const bhoonidhiService = BhoonidhiApiServices.getInstance();
 
 function buildSearchBodyFromRequest(req: AuthenticatedRequest) {
   const { collections, datetime, filter } = req.body;

@@ -4,8 +4,7 @@ import { AuthenticatedRequest } from '../utils/authMiddleware';
 
 const router = Router();
 
-// Create Bhoonidhi API client instance
-const bhoonidhiService = new BhoonidhiApiServices();
+const bhoonidhiService = BhoonidhiApiServices.getInstance();
 
 router.get('/', async (req: AuthenticatedRequest, res) => {
   try {

@@ -1,32 +1,11 @@
 import { Router } from 'express';
 import { BhoonidhiApiServices } from '../services/bhoonidhiApiService';
 import { AuthenticatedRequest } from '../utils/authMiddleware';
-import { SearchProductsBody } from '../utils/types/bhoonidhiApiClient.types';
+import { SearchProductsBody } from '../types/bhoonidhi/bhoonidhiApiClient.types';
 
 const router = Router();
 
-const bhoonidhiService = new BhoonidhiApiServices();
-
-router.get('/', async (req: AuthenticatedRequest, res) => {
-  try {
-    const userId = req.bhoonidhiPayload?.USERID || '';
-    const bhoonidhiToken = req.bhoonidhiPayload?.JWT || '';
-    const userEmail = req.bhoonidhiPayload?.USEREMAIL || '';
-
-    const response = await bhoonidhiService.getAllCollections({
-      userId,
-      userEmail,
-      token: bhoonidhiToken,
-    });
-
-    const collections = await bhoonidhiService.getAllCollectionsFromResponse(response);
-
-    res.status(200).json(collections);
-  } catch (err) {
-    console.error('Error fetching collections:', err);
-    res.status(500).json({ error: 'Internal Server Error' });
-  }
-});
+const bhoonidhiService = BhoonidhiApiServices.getInstance();
 
 router.get('/:collectionID', async (req: AuthenticatedRequest, res) => {
   try {
