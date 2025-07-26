@@ -5,10 +5,11 @@ import {
   CollectionSensor,
   ProductMeta,
   SearchProductsBody,
-} from '../utils/types/bhoonidhiApiClient.types';
+} from '../types/bhoonidhi/bhoonidhiApiClient.types';
 
 export class BhoonidhiApiServices {
   private axiosInstance: AxiosInstance;
+  private static instance: BhoonidhiApiServices;
 
   constructor(baseURL: string = 'https://bhoonidhi.nrsc.gov.in') {
     this.axiosInstance = axios.create({
@@ -31,6 +32,13 @@ export class BhoonidhiApiServices {
         token: '',
       },
     });
+  }
+
+  static getInstance(): BhoonidhiApiServices {
+    if (!BhoonidhiApiServices.instance) {
+      BhoonidhiApiServices.instance = new BhoonidhiApiServices();
+    }
+    return BhoonidhiApiServices.instance;
   }
 
   private async post(
