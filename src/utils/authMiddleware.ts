@@ -1,6 +1,6 @@
 import { Response, NextFunction, Request } from 'express';
 import { tokenManager } from '../utils/tokenManager';
-import { BhoonidhiLoginResponse } from './types/bhoonidhiApiClient.types';
+import { BhoonidhiLoginResponse } from '../types/bhoonidhi/bhoonidhiApiClient.types';
 
 export interface AuthenticatedRequest extends Request {
   bhoonidhiPayload?: BhoonidhiLoginResponse;

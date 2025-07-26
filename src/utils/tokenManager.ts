@@ -1,5 +1,5 @@
 import jwt, { SignOptions } from 'jsonwebtoken';
-import { BhoonidhiLoginResponse } from './types/bhoonidhiApiClient.types';
+import { BhoonidhiLoginResponse } from '../types/bhoonidhi/bhoonidhiApiClient.types';
 import { createClient } from 'redis';
 
 export interface TokenPayload {
