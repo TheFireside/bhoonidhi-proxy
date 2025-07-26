@@ -1,12 +1,12 @@
 import { Router } from 'express';
 import { tokenManager } from '../utils/tokenManager';
 import jwt from 'jsonwebtoken';
-import { BhoonidhiApiClient } from '../utils/BhoonidhiApiClient';
 import { BhoonidhiLoginResponse } from '../utils/types/bhoonidhiApiClient.types';
+import { BhoonidhiApiServices } from '../services/bhoonidhiApiService';
 
 const router = Router();
 
-const bhoonidhiClient = new BhoonidhiApiClient();
+const bhoonidhiService = new BhoonidhiApiServices();
 
 router.post('/token', async (req, res) => {
   const { userId, password, grant_type, refresh_token } = req.body;
@@ -18,7 +18,7 @@ router.post('/token', async (req, res) => {
       }
 
       try {
-        const loginResponse = await bhoonidhiClient.getAccessToken({
+        const loginResponse = await bhoonidhiService.getAccessToken({
           userId,
           password,
         });
@@ -133,7 +133,7 @@ router.post('/logout', async (req, res) => {
     // Logout from Bhoonidhi API if token is provided
     if (bhoonidhiToken) {
       try {
-        await bhoonidhiClient.logout({ token: bhoonidhiToken });
+        await bhoonidhiService.logout({ token: bhoonidhiToken });
       } catch (logoutError) {
         console.error('Bhoonidhi logout error:', logoutError);
       }

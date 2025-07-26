@@ -1,11 +1,11 @@
 import { Router } from 'express';
-import { BhoonidhiApiClient } from '../utils/BhoonidhiApiClient';
+import { BhoonidhiApiServices } from '../services/bhoonidhiApiService';
 import { AuthenticatedRequest } from '../utils/authMiddleware';
 import { SearchProductsBody } from '../utils/types/bhoonidhiApiClient.types';
 
 const router = Router();
 
-const bhoonidhiClient = new BhoonidhiApiClient();
+const bhoonidhiService = new BhoonidhiApiServices();
 
 router.get('/', async (req: AuthenticatedRequest, res) => {
   try {
@@ -13,13 +13,13 @@ router.get('/', async (req: AuthenticatedRequest, res) => {
     const bhoonidhiToken = req.bhoonidhiPayload?.JWT || '';
     const userEmail = req.bhoonidhiPayload?.USEREMAIL || '';
 
-    const response = await bhoonidhiClient.getAllCollections({
+    const response = await bhoonidhiService.getAllCollections({
       userId,
       userEmail,
       token: bhoonidhiToken,
     });
 
-    const collections = await bhoonidhiClient.getAllCollectionsFromResponse(response);
+    const collections = await bhoonidhiService.getAllCollectionsFromResponse(response);
 
     res.status(200).json(collections);
   } catch (err) {
@@ -34,12 +34,12 @@ router.get('/:collectionID', async (req: AuthenticatedRequest, res) => {
     const bhoonidhiToken = req.bhoonidhiPayload?.JWT || '';
     const userId = req.bhoonidhiPayload?.USERID || '';
     const userEmail = req.bhoonidhiPayload?.USEREMAIL || '';
-    const response = await bhoonidhiClient.getAllCollections({
+    const response = await bhoonidhiService.getAllCollections({
       userId,
       userEmail,
       token: bhoonidhiToken,
     });
-    const collection = bhoonidhiClient.getCollectionDetailsFromResponse(response, collectionID);
+    const collection = bhoonidhiService.getCollectionDetailsFromResponse(response, collectionID);
     res.status(200).json(collection);
   } catch (err) {
     console.error('Error fetching collection details:', err);
@@ -65,7 +65,7 @@ router.get('/:collectionID/items', async (req: AuthenticatedRequest, res) => {
       filters: '%7B%7D',
     };
 
-    const response = await bhoonidhiClient.searchProducts(searchProductsBody, bhoonidhiToken);
+    const response = await bhoonidhiService.searchProducts(searchProductsBody, bhoonidhiToken);
 
     res.status(200).json(response.Results);
   } catch (err) {
@@ -80,7 +80,7 @@ router.get('/:collectionID/items/:itemID', async (req: AuthenticatedRequest, res
     const itemID = req.params.itemID;
     const bhoonidhiToken = req.bhoonidhiPayload?.JWT || '';
 
-    const response = await bhoonidhiClient.getProductMeta({
+    const response = await bhoonidhiService.getProductMeta({
       productID: itemID,
       token: bhoonidhiToken,
       cookie: req.cookies?.bhoonidhiCookie,

@@ -1,11 +1,11 @@
 import { Router } from 'express';
-import { BhoonidhiApiClient } from '../utils/BhoonidhiApiClient';
+import { BhoonidhiApiServices } from '../services/bhoonidhiApiService';
 import { AuthenticatedRequest } from '../utils/authMiddleware';
 
 const router = Router();
 
 // Create Bhoonidhi API client instance
-const bhoonidhiClient = new BhoonidhiApiClient();
+const bhoonidhiService = new BhoonidhiApiServices();
 
 router.get('/', async (req: AuthenticatedRequest, res) => {
   try {
@@ -20,7 +20,7 @@ router.get('/', async (req: AuthenticatedRequest, res) => {
       return res.status(400).json({ error: 'Missing id or collection parameter' });
     }
 
-    const productMeta = await bhoonidhiClient.getProductMeta({
+    const productMeta = await bhoonidhiService.getProductMeta({
       productID: id as string,
       token: bhoonidhiToken,
       cookie: req.cookies?.bhoonidhiCookie,
@@ -30,7 +30,7 @@ router.get('/', async (req: AuthenticatedRequest, res) => {
       throw new Error('Product metadata not found');
     }
 
-    const downloadPath = bhoonidhiClient.getDownloadPath({
+    const downloadPath = bhoonidhiService.getDownloadPath({
       sat: productMeta.SATELLITE,
       sen: productMeta.SENSOR,
       imgPath: productMeta.DIRPATH,

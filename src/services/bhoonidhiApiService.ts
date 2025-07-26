@@ -5,9 +5,9 @@ import {
   CollectionSensor,
   ProductMeta,
   SearchProductsBody,
-} from './types/bhoonidhiApiClient.types';
+} from '../utils/types/bhoonidhiApiClient.types';
 
-export class BhoonidhiApiClient {
+export class BhoonidhiApiServices {
   private axiosInstance: AxiosInstance;
 
   constructor(baseURL: string = 'https://bhoonidhi.nrsc.gov.in') {

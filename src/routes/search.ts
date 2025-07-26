@@ -1,9 +1,9 @@
 import { Router } from 'express';
-import { BhoonidhiApiClient } from '../utils/BhoonidhiApiClient';
+import { BhoonidhiApiServices } from '../services/bhoonidhiApiService';
 import { AuthenticatedRequest, requireAuth } from '../utils/authMiddleware';
 
 const router = Router();
-const bhoonidhiClient = new BhoonidhiApiClient();
+const bhoonidhiService = new BhoonidhiApiServices();
 
 function buildSearchBodyFromRequest(req: AuthenticatedRequest) {
   const { collections, datetime, filter } = req.body;
@@ -33,7 +33,7 @@ router.post('/', requireAuth, async (req: AuthenticatedRequest, res) => {
       return res.status(401).json({ error: 'Bhoonidhi token not found' });
     }
     const searchBody = buildSearchBodyFromRequest(req);
-    const searchResults = await bhoonidhiClient.searchProducts(searchBody, bhoonidhiToken);
+    const searchResults = await bhoonidhiService.searchProducts(searchBody, bhoonidhiToken);
     res.status(200).json(searchResults);
   } catch (err) {
     console.error('Error searching products:', err);
